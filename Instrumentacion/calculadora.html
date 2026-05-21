@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Científica y Compleja Definitiva</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1e1e24;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .contenedor-principal {
+            display: flex;
+            background-color: #2d2d35;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0px 15px 35px rgba(0,0,0,0.5);
+            gap: 25px;
+            max-width: 1150px;
+            width: 100%;
+        }
+
+        .seccion-calculadora {
+            flex: 1.2;
+        }
+
+        .seccion-grafico {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #222227;
+            border-radius: 12px;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        .pantalla {
+            width: 100%;
+            height: 70px;
+            background-color: #0f0f12;
+            color: #00ff66;
+            font-size: 22px;
+            text-align: right;
+            padding: 15px;
+            border: 2px solid #3e3e4a;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .botones {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        button {
+            padding: 14px 4px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: #3e3e4a;
+            color: #ffffff;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #4f4f5e;
+        }
+
+        button.numero {
+            background-color: #555563;
+        }
+
+        button.numero:hover {
+            background-color: #666677;
+        }
+
+        button.operador {
+            background-color: #ff9f1c;
+            color: #fff;
+        }
+
+        button.operador:hover {
+            background-color: #fca326;
+        }
+
+        button.especial {
+            background-color: #e71d36;
+            color: white;
+        }
+
+        button.especial:hover {
+            background-color: #ff334b;
+        }
+
+        button.vector-btn {
+            background-color: #00b4d8;
+            color: white;
+        }
+
+        button.vector-btn:hover {
+            background-color: #0096c7;
+        }
+
+        button.igual {
+            background-color: #2ec4b6;
+            color: white;
+            grid-column: span 2;
+        }
+
+        button.igual:hover {
+            background-color: #23a89d;
+        }
+
+        canvas {
+            background-color: #151518;
+            border: 1px solid #3e3e4a;
+            border-radius: 6px;
+            width: 100%;
+            max-width: 340px;
+            height: auto;
+            aspect-ratio: 1;
+        }
+
+        .info-grafico {
+            color: #aaa;
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.4;
+            width: 100%;
+        }
+
+        .contenedor-historial {
+            width: 100%;
+            background-color: #151518;
+            border: 1px solid #3e3e4a;
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .titulo-historial {
+            color: #00b4d8;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .item-historial {
+            color: #eee;
+            font-size: 11px;
+            padding: 4px;
+            border-bottom: 1px solid #222;
+            cursor: pointer;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-historial:hover {
+            background-color: #222227;
+            color: #00ff66;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor-principal">
+        <div class="seccion-calculadora">
+            <input type="text" class="pantalla" id="pantalla" readonly placeholder="0">
+            
+            <div class="botones">
+                <button class="especial" onclick="limpiarPantalla()">AC</button>
+                <button class="especial" onclick="borrarUltimo()">DEL</button>
+                <button onclick="agregarValor('(')">(</button>
+                <button onclick="agregarValor(')')">)</button>
+                <button class="operador" onclick="agregarValor('/')">÷</button>
+
+                <button onclick="agregarValor('Math.sin(')">sin</button>
+                <button onclick="agregarValor('Math.cos(')">cos</button>
+                <button onclick="agregarValor('R(')">R(x,y)</button>
+                <button onclick="agregarValor('P(')">P(r,θ)</button>
+                <button class="operador" onclick="agregarValor('*')">×</button>
+
+                <button class="numero" onclick="agregarValor('7')">7</button>
+                <button class="numero" onclick="agregarValor('8')">8</button>
+                <button class="numero" onclick="agregarValor('9')">9</button>
+                <button onclick="agregarValor('**2')">x²</button>
+                <button class="operador" onclick="agregarValor('-')">-</button>
+
+                <button class="numero" onclick="agregarValor('4')">4</button>
+                <button class="numero" onclick="agregarValor('5')">5</button>
+                <button class="numero" onclick="agregarValor('6')">6</button>
+                <button onclick="agregarValor('**3')">x³</button>
+                <button class="operador" onclick="agregarValor('+')">+</button>
+
+                <button class="numero" onclick="agregarValor('1')">1</button>
+                <button class="numero" onclick="agregarValor('2')">2</button>
+                <button class="numero" onclick="agregarValor('3')">3</button>
+                <button onclick="agregarValor('**')">x^y</button>
+                <button onclick="agregarValor('Math.sqrt(')">√</button>
+
+                <button class="numero" onclick="agregarValor('0')">0</button>
+                <button onclick="agregarValor('.')">.</button>
+                <button onclick="agregarValor(',')">,</button>
+                <button onclick="agregarValor('Math.PI')">π</button>
+                <button onclick="agregarValor('Math.E')">e</button>
+
+                <button class="vector-btn" onclick="convertirAGraficarPolar()">→ Polar</button>
+                <button class="vector-btn" onclick="convertirAGraficarRectangular()">→ Rect</button>
+                <button class="numero" onclick="agregarAns()">ANS</button>
+                <button class="igual" onclick="calcularOperacionCompleja()">=</button>
+            </div>
+        </div>
+
+        <div class="seccion-grafico">
+            <canvas id="planoVectorial" width="400" height="400"></canvas>
+            <div class="info-grafico" id="infoGrafico">
+                Formatos soportados:<br>
+                <code>2+5*3</code> o <code>(0.00+70.71j) + R(9,3)</code>
+            </div>
+            
+            <div class="contenedor-historial">
+                <div class="titulo-historial">Historial (clic para cargar)</div>
+                <div id="listaHistorial"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pantalla = document.getElementById('pantalla');
+        const canvas = document.getElementById('planoVectorial');
+        const ctx = canvas.getContext('2d');
+        const listaHistorial = document.getElementById('listaHistorial');
+
+        let ultimaSolucion = "0"; 
+        let mostrandoResultado = false; 
+
+        dibujarPlano(0, 0);
+
+        function agregarValor(valor) {
+            if (mostrandoResultado) {
+                pantalla.value = "";
+                mostrandoResultado = false;
+            }
+            pantalla.value += valor;
+        }
+
+        function agregarAns() {
+            if (mostrandoResultado) {
+                pantalla.value = "";
+                mostrandoResultado = false;
+            }
+            pantalla.value += ultimaSolucion;
+        }
+
+        function limpiarPantalla() {
+            pantalla.value = '';
+            mostrandoResultado = false;
+            dibujarPlano(0, 0);
+            document.getElementById('infoGrafico').innerHTML = "Formatos soportados:<br><code>2+5*3</code> o <code>(0.00+70.71j) + R(9,3)</code>";
+        }
+
+        function borrarUltimo() {
+            if (mostrandoResultado) {
+                pantalla.value = "";
+                mostrandoResultado = false;
+            } else {
+                pantalla.value = pantalla.value.slice(0, -1);
+            }
+        }
+
+        function cargarHistorial(valor) {
+            pantalla.value = valor;
+            mostrandoResultado = false;
+        }
+
+        function añadirAlHistorial(operacion, resultado) {
+            const item = document.createElement('div');
+            item.className = 'item-historial';
+            item.innerText = `${operacion} = ${resultado}`;
+            item.onclick = () => cargarHistorial(resultado);
+            listaHistorial.insertBefore(item, listaHistorial.firstChild);
+        }
+
+        // CONTROL MATEMÁTICO REAL DE NÚMEROS COMPLEJOS
+        class Complejo {
+            constructor(re, im) {
+                this.re = re;
+                this.im = im;
+            }
+            sumar(c) { 
+                let obj = (c instanceof Complejo) ? c : new Complejo(c, 0);
+                return new Complejo(this.re + obj.re, this.im + obj.im); 
+            }
+            restar(c) { 
+                let obj = (c instanceof Complejo) ? c : new Complejo(c, 0);
+                return new Complejo(this.re - obj.re, this.im - obj.im); 
+            }
+            multiplicar(c) {
+                let obj = (c instanceof Complejo) ? c : new Complejo(c, 0);
+                return new Complejo(this.re * obj.re - this.im * obj.im, this.re * obj.im + this.im * obj.re);
+            }
+            dividir(c) {
+                let obj = (c instanceof Complejo) ? c : new Complejo(c, 0);
+                let den = obj.re * obj.re + obj.im * obj.im;
+                if(den === 0) throw new Error("DivByZero");
+                return new Complejo(
+                    (this.re * obj.re + this.im * obj.im) / den,
+                    (this.im * obj.re - this.re * obj.im) / den
+                );
+            }
+            toString() {
+                let signo = this.im >= 0 ? "+" : "";
+                return `${this.re.toFixed(2)}${signo}${this.im.toFixed(2)}j`;
+            }
+        }
+
+        // Funciones puente llamadas por eval()
+        function R(x, y) { return new Complejo(x, y); }
+        function P(r, anguloGrados) {
+            const rad = anguloGrados * (Math.PI / 180);
+            return new Complejo(r * Math.cos(rad), r * Math.sin(rad));
+        }
+
+        function parseComplejoString(str) {
+            let s = str.replace(/j/g, '').replace(/\s+/g, '');
+            let partes = s.split(/(?=[+-])/);
+            let re = 0, im = 0;
+            if(partes.length === 1) {
+                if(str.includes('j')) im = parseFloat(partes[0]);
+                else re = parseFloat(partes[0]);
+            } else if(partes.length === 2) {
+                re = parseFloat(partes[0]);
+                im = parseFloat(partes[1]);
+            }
+            return new Complejo(isNaN(re)?0:re, isNaN(im)?0:im);
+        }
+
+        function convertirAGraficarPolar() {
+            try {
+                let entrada = pantalla.value.replace(/°/g, '');
+                let c;
+                if(entrada.includes('j')) {
+                    c = parseComplejoString(entrada);
+                } else {
+                    c = eval(entrada);
+                }
+                if (!(c instanceof Complejo)) {
+                    c = new Complejo(parseFloat(c), 0);
+                }
+
+                const magnitud = Math.sqrt(c.re*c.re + c.im*c.im);
+                let angulo = Math.atan2(c.im, c.re) * (180 / Math.PI);
+                if (angulo < 0) angulo += 360;
+
+                let resPolar = `P(${magnitud.toFixed(2)},${angulo.toFixed(1)}°)`;
+                añadirAlHistorial(`→Polar(${pantalla.value})`, resPolar);
+                pantalla.value = resPolar;
+                ultimaSolucion = resPolar;
+                mostrandoResultado = true;
+                actualizarInfoYGrafico(c.re, c.im, magnitud, angulo);
+            } catch(e) { pantalla.value = "Error"; mostrandoResultado = true; }
+        }
+
+        function convertirAGraficarRectangular() {
+            try {
+                let entrada = pantalla.value.replace(/°/g, '');
+                let c = eval(entrada);
+                if (!(c instanceof Complejo)) {
+                    c = new Complejo(parseFloat(c), 0);
+                }
+
+                const magnitud = Math.sqrt(c.re*c.re + c.im*c.im);
+                let angulo = Math.atan2(c.im, c.re) * (180 / Math.PI);
+                if (angulo < 0) angulo += 360;
+
+                let resRect = c.toString();
+                añadirAlHistorial(`→Rect(${pantalla.value})`, resRect);
+                pantalla.value = resRect;
+                ultimaSolucion = resRect;
+                mostrandoResultado = true;
+                actualizarInfoYGrafico(c.re, c.im, magnitud, angulo);
+            } catch(e) { pantalla.value = "Error"; mostrandoResultado = true; }
+        }
+
+        // MOTOR ARITMÉTICO CENTRAL REPARADO CON PARSER REGEX SEGURO
+        function calcularOperacionCompleja() {
+            let expresionOriginal = pantalla.value;
+            try {
+                let expr = expresionOriginal.replace(/°/g, '');
+
+                // 1. Convertir formatos de texto plano "0.00+70.71j" (del ANS) a constructores de objetos R(x,y)
+                expr = expr.replace(/([0-9.-]+\s*[+-]\s*[0-9.-]+)j/g, function(match, complexGroup) {
+                    let c = parseComplejoString(complexGroup);
+                    return `R(${c.re},${c.im})`;
+                });
+                // Tratar números complejos puros de una sola componente (ej: "70.71j")
+                expr = expr.replace(/\b([0-9.-]+)j\b/g, "R(0,$1)");
+
+                // 2. Si es una operación puramente numérica escalar (sin vectores), usar cálculo normal
+                if (!expr.includes('R(') && !expr.includes('P(')) {
+                    let resultadoNormal = eval(expr);
+                    if (resultadoNormal === undefined || isNaN(resultadoNormal)) {
+                        pantalla.value = 'Error';
+                    } else {
+                        pantalla.value = resultadoNormal;
+                        ultimaSolucion = resultadoNormal.toString();
+                        añadirAlHistorial(expresionOriginal, resultadoNormal);
+                    }
+                    mostrandoResultado = true;
+                    return;
+                }
+
+                // 3. PROCESADOR REGEX DE CADENA OPERATIVA FASORIAL:
+                // Transforma algebraicamente operadores infix (+,-,*,/) en llamadas de métodos de la clase Complejo
+                // de forma segura sin romper funciones internas como R(x,y) o P(r,t)
+                let procesada = transformarMatematicaCompleja(expr);
+                let resultadoComplejo = eval(procesada);
+
+                if (resultadoComplejo instanceof Complejo) {
+                    const magnitud = Math.sqrt(resultadoComplejo.re*resultadoComplejo.re + resultadoComplejo.im*resultadoComplejo.im);
+                    let angulo = Math.atan2(resultadoComplejo.im, resultadoComplejo.re) * (180 / Math.PI);
+                    if (angulo < 0) angulo += 360;
+
+                    let resFinal = resultadoComplejo.toString();
+                    pantalla.value = resFinal;
+                    ultimaSolucion = resFinal;
+                    
+                    añadirAlHistorial(expresionOriginal, resFinal);
+                    actualizarInfoYGrafico(resultadoComplejo.re, resultadoComplejo.im, magnitud, angulo);
+                } else {
+                    // Si el eval devolvió un escalar plano, envolverlo
+                    let valorEscalar = parseFloat(resultadoComplejo);
+                    if(!isNaN(valorEscalar)) {
+                        pantalla.value = valorEscalar.toFixed(2);
+                        ultimaSolucion = valorEscalar.toString();
+                    } else {
+                        pantalla.value = 'Error';
+                    }
+                }
+                mostrandoResultado = true;
+
+            } catch (error) {
+                pantalla.value = 'Error';
+                mostrandoResultado = true;
+            }
+        }
+
+        // Convierte expresiones de forma recursiva simulando un árbol jerárquico binario mediante Regex seguro
+        function transformarMatematicaCompleja(expr) {
+            let s = expr.replace(/\s+/g, '');
+
+            // Patrón para capturar bloques atómicos: Funciones R(...), P(...), variables o bloques entre paréntesis
+            // Cambiamos el algoritmo de sustitución destructivo anterior por un enrutador estructurado
+            const regexOperadores = /(\+|-|\*|\/)/g;
+            
+            // Evaluamos la jerarquía aislando operaciones básicas paso a paso de forma nativa para objetos Complejos.
+            // Para simplificar de manera infalible y evitar romper las comas internas de R(x,y) y P(r,θ):
+            // Protegemos temporalmente los bloques vectoriales:
+            let vectoresEncontrados = [];
+            let protegida = s.replace(/(R|P)\([^)]+\)/g, function(match) {
+                vectoresEncontrados.push(match);
+                return `__VEC_ID_${vectoresEncontrados.length - 1}__`;
+            });
+
+            // Aplicamos sustituciones de operadores sobre la cadena protegida (donde ya no hay riesgo con las comas)
+            protegida = armarMetodos(protegida, '/', 'dividir');
+            protegida = armarMetodos(protegida, '*', 'multiplicar');
+            protegida = armarMetodos(protegida, '+', 'sumar');
+            protegida = armarMetodos(protegida, '-', 'restar');
+
+            // Restauramos los vectores originales en sus posiciones jerárquicas correspondientes
+            for (let i = 0; i < vectoresEncontrados.length; i++) {
+                protegida = protegida.replace(`__VEC_ID_${i}__`, vectoresEncontrados[i]);
+            }
+
+            return protegida;
+        }
+
+        function armarMetodos(cadena, op, metodo) {
+            let partes = cadena.split(op);
+            if (partes.length === 1) return cadena;
+            let res = partes[0];
+            for (let i = 1; i < partes.length; i++) {
+                // Si el operando derecho es un número plano, lo convertimos en un objeto complejo implícito
+                let operandoDerecho = partes[i];
+                if(/^\d+(\.\d+)?$/.test(operandoDerecho)) {
+                    operandoDerecho = `new Complejo(${operandoDerecho},0)`;
+                }
+                res = `(${res}).${metodo}(${operandoDerecho})`;
+            }
+            return res;
+        }
+
+        function actualizarInfoYGrafico(x, y, mag, ang) {
+            let signo = y >= 0 ? "+" : "";
+            document.getElementById('infoGrafico').innerHTML = `
+                <strong>Resultado Complejo:</strong> ${x.toFixed(2)}${signo}${y.toFixed(2)}j<br>
+                <strong>Módulo (r):</strong> ${mag.toFixed(2)}<br>
+                <strong>Ángulo (θ):</strong> ${ang.toFixed(1)}°
+            `;
+            dibujarPlano(x, y);
+        }
+
+        function dibujarPlano(vectorX, vectorY) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const centroX = canvas.width / 2;
+            const centroY = canvas.height / 2;
+            
+            const maxCoordenada = Math.max(Math.abs(vectorX), Math.abs(vectorY), 5);
+            const escala = (canvas.width / 2 - 25) / maxCoordenada; 
+
+            ctx.strokeStyle = '#25252b'; ctx.lineWidth = 1;
+            for(let i = -Math.ceil(maxCoordenada); i <= Math.ceil(maxCoordenada); i++) {
+                ctx.beginPath(); ctx.moveTo(centroX + i * escala, 0); ctx.lineTo(centroX + i * escala, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, centroY - i * escala); ctx.lineTo(canvas.width, centroY - i * escala); ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#555563'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(10, centroY); ctx.lineTo(canvas.width - 10, centroY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(centroX, 10); ctx.lineTo(centroX, canvas.height - 10); ctx.stroke();
+
+            if (vectorX !== 0 || vectorY !== 0) {
+                const destinoX = centroX + vectorX * escala;
+                const destinoY = centroY - vectorY * escala; 
+
+                ctx.strokeStyle = '#ff9f1c'; ctx.setLineDash();
+                ctx.beginPath(); ctx.moveTo(destinoX, destinoY); ctx.lineTo(destinoX, centroY);
+                ctx.moveTo(destinoX, destinoY); ctx.lineTo(centroX, destinoY); ctx.stroke();
+                ctx.setLineDash([]); 
+
+                ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(centroX, centroY); ctx.lineTo(destinoX, destinoY); stroke(); ctx.stroke();
+
+                const angulo = Math.atan2(destinoY - centroY, destinoX - centroX);
+                const tamanoFlecha = 12;
+                ctx.fillStyle = '#00ff66';
+                ctx.beginPath(); ctx.moveTo(destinoX, destinoY);
+                ctx.lineTo(destinoX - tamanoFlecha * Math.cos(angulo - Math.PI / 6), destinoY - tamanoFlecha * Math.sin(angulo - Math.PI / 6));
+                ctx.lineTo(destinoX - tamanoFlecha * Math.cos(angulo + Math.PI / 6), destinoY - tamanoFlecha * Math.sin(angulo + Math.PI / 6));
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(centroX, centroY, 4, 0, 2 * Math.PI); ctx.fill();
+            }
+        }
+    </script>
+</body>
+</html>
