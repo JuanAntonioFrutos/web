@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Avanzado de Diagramas de Fase de Aleaciones Binarias</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1100px; margin: 20px auto; padding: 20px; background-color: #f8fafc; color: #0f172a; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        h2, h3 { color: #1e3a8a; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 8px; font-size: 13px; color: #475569; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background-color: #fff; }
+        input:focus, select:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .flex-container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .flex-child { flex: 1; min-width: 320px; }
+        .fase-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 5px; }
+        .fase-L { background-color: #fef3c7; color: #d97706; border: 1px solid #f59e0b; }
+        .fase-S { background-color: #dcfce7; color: #15803d; border: 1px solid #22c55e; }
+        .fase-Bifasico { background-color: #e0f2fe; color: #0369a1; border: 1px solid #38bdf8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #f1f5f9; color: #1e293b; font-weight: 600; }
+        .math-block { background: #f8fafc; font-family: 'Consolas', monospace; padding: 12px; border-radius: 6px; border-left: 4px solid #3b82f6; margin-top: 10px; font-size: 13px; white-space: pre-wrap; }
+        .chart-container { position: relative; height: 420px; width: 100%; }
+         .btn-volver {
+            background-color: #475569;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-volver:hover {
+    background-color: #334155;
+}
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 style="margin: 0; border: none;">Diagrama de fases</h2>
+    <button class="btn-volver" onclick="window.location.href='../../index.html'">← Volver al Índice</button></div>
+    <div class="grid" style="grid-template-columns: 1fr;">
+        <div class="group">
+            <label for="presetSistema">Seleccionar Sistema de Aleación Predeterminado:</label>
+            <select id="presetSistema" onchange="aplicarPreset()">
+                <option value="Cu-Ni">Cobre (Cu) - Níquel (Ni) [Sistema de Ingeniería Clásico]</option>
+                <option value="Sb-Bi">Antimonio (Sb) - Bismuto (Bi)</option>
+                <option value="Au-Ag">Oro (Au) - Plata (Ag)</option>
+                <option value="Ge-Si">Germanio (Ge) - Silicio (Si)</option>
+                <option value="custom">-- Personalizado (Definir valores abajo) --</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="grid">
+        <div class="group">
+            <label for="compA">Componente Base A (0% B):</label>
+            <input type="text" id="compA" value="Cobre (Cu)" oninput="marcarCustom()">
+        </div>
+        <div class="group">
+            <label for="tempA">Tª Fusión de A (°C):</label>
+            <input type="number" id="tempA" value="1085" oninput="marcarCustom(); calcularAleacion();">
+        </div>
+        <div class="group">
+            <label for="compB">Componente Aleante B (100% B):</label>
+            <input type="text" id="compB" value="Níquel (Ni)" oninput="marcarCustom()">
+        </div>
+        <div class="group">
+            <label for="tempB">Tª Fusión de B (°C):</label>
+            <input type="number" id="tempB" value="1455" oninput="marcarCustom(); calcularAleacion();">
+        </div>
+    </div>
+    
+    <div class="grid" style="grid-template-columns: 1fr 1fr;">
+        <div class="group">
+            <label for="compGlobal">Composición Global de la Aleación (X₀) [% de B]:</label>
+            <input type="number" id="compGlobal" value="40" min="0" max="100" step="any" oninput="calcularAleacion()">
+        </div>
+        <div class="group">
+            <label for="tempSistema">Temperatura de Análisis (T) [°C]:</label>
+            <input type="number" id="tempSistema" value="1250" step="any" oninput="calcularAleacion()">
+        </div>
+    </div>
+</div>
+
+<div class="flex-container">
+    <div class="card flex-child" style="flex: 1.5;">
+        <h2>2. Diagrama de Fase Temperatura-Composición</h2>
+        <div class="chart-container">
+            <canvas id="canvasDiagrama"></canvas>
+        </div>
+    </div>
+    
+    <div class="card flex-child" style="flex: 1;">
+        <h2>3. Estado de Fases y Regla de la Palanca</h2>
+        <div>
+            <strong>Microestructura / Estado Actual:</strong><br>
+            <span id="badgeEstado" class="fase-badge">-</span>
+        </div>
+        
+        <table id="tablaResultados">
+            <thead>
+                <tr>
+                    <th>Magnitud</th>
+                    <th>Fase Líquida (L)</th>
+                    <th>Fase Sólida (α)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Composición de Fase (X)</strong></td>
+                    <td id="resCompL">-</td>
+                    <td id="resCompS">-</td>
+                </tr>
+                <tr>
+                    <td><strong>Fracción Másica (f)</strong></td>
+                    <td id="resFracL" style="font-weight: bold; color: #b45309;">-</td>
+                    <td id="resFracS" style="font-weight: bold; color: #15803d;">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Ecuaciones de Reparto del Estado</h3>
+        <div id="bloqueMatematico" class="math-block">
+            El desarrollo matemático aparecerá aquí dinámicamente.
+        </div>
+    </div>
+</div>
+
+<script>
+let chartDiagrama = null;
+
+const presets = {
+    "Cu-Ni": { nameA: "Cobre (Cu)", tempA: 1085, nameB: "Níquel (Ni)", tempB: 1455, x0: 40, tSys: 1250 },
+    "Sb-Bi": { nameA: "Antimonio (Sb)", tempA: 630, nameB: "Bismuto (Bi)", tempB: 271, x0: 60, tSys: 450 },
+    "Au-Ag": { nameA: "Oro (Au)", tempA: 1064, nameB: "Plata (Ag)", tempB: 962, x0: 50, tSys: 1000 },
+    "Ge-Si": { nameA: "Germanio (Ge)", tempA: 938, nameB: "Silicio (Si)", tempB: 1414, x0: 30, tSys: 1150 }
+};
+
+function aplicarPreset() {
+    const selector = document.getElementById('presetSistema').value;
+    if (selector === 'custom') return;
+
+    const data = presets[selector];
+    document.getElementById('compA').value = data.nameA;
+    document.getElementById('tempA').value = data.tempA;
+    document.getElementById('compB').value = data.nameB;
+    document.getElementById('tempB').value = data.tempB;
+    document.getElementById('compGlobal').value = data.x0;
+    document.getElementById('tempSistema').value = data.tSys;
+
+    calcularAleacion();
+}
+
+function marcarCustom() {
+    document.getElementById('presetSistema').value = 'custom';
+}
+
+function calcularAleacion() {
+    const nameA = document.getElementById('compA').value;
+    const nameB = document.getElementById('compB').value;
+    const Tm_A = parseFloat(document.getElementById('tempA').value) || 0;
+    const Tm_B = parseFloat(document.getElementById('tempB').value) || 1;
+    const X0 = parseFloat(document.getElementById('compGlobal').value) || 0;
+    const T_sys = parseFloat(document.getElementById('tempSistema').value) || 0;
+
+    let T_min = Math.min(Tm_A, Tm_B);
+    let T_max = Math.max(Tm_A, Tm_B);
+
+    // Calcular límites locales Liquidus/Solidus en la coordenada X0 para clasificación rápida
+    let x_norm = X0 / 100;
+    let T_liq_X0, T_sol_X0;
+
+    if (Tm_B >= Tm_A) {
+        T_liq_X0 = Tm_A + (Tm_B - Tm_A) * (2 * x_norm - x_norm * x_norm);
+        T_sol_X0 = Tm_A + (Tm_B - Tm_A) * (x_norm * x_norm);
+    } else {
+        T_liq_X0 = Tm_B + (Tm_A - Tm_B) * (2 * (1 - x_norm) - (1 - x_norm) * (1 - x_norm));
+        T_sol_X0 = Tm_B + (Tm_A - Tm_B) * ((1 - x_norm) * (1 - x_norm));
+    }
+
+    let estado = "";
+    let X_L = "-", X_S = "-", f_L = "-", f_S = "-";
+    let tieLinePoints = [];
+
+    if (T_sys >= T_liq_X0) {
+        estado = "Líquido Homogéneo (L)";
+        document.getElementById('badgeEstado').className = "fase-badge fase-L";
+        X_L = X0.toFixed(2) + " %";
+        f_L = "100.00 %";
+        f_S = "0.00 %";
+        document.getElementById('bloqueMatematico').innerHTML = `El sistema está fundido (T ≥ T_liquidus).\nÚnica fase estable: Líquido.\nComposición de fase: X_L = X₀ = ${X0.toFixed(2)}% de ${nameB}`;
+    } 
+    else if (T_sys <= T_sol_X0) {
+        estado = "Solución Sólida Completa (α)";
+        document.getElementById('badgeEstado').className = "fase-badge fase-S";
+        X_S = X0.toFixed(2) + " %";
+        f_L = "0.00 %";
+        f_S = "100.00 %";
+        document.getElementById('bloqueMatematico').innerHTML = `El sistema está completamente cristalizado (T ≤ T_solidus).\nÚnica fase estable: Sólido α.\nComposición de fase: X_α = X₀ = ${X0.toFixed(2)}% de ${nameB}`;
+    } 
+    else {
+        estado = "Región Bifásica (L + α)";
+        document.getElementById('badgeEstado').className = "fase-badge fase-Bifasico";
+
+        let pct_L, pct_S;
+
+        if (Tm_B >= Tm_A) {
+            let t = (T_sys - Tm_A) / (Tm_B - Tm_A);
+            pct_L = (1 - Math.sqrt(1 - t)) * 100;
+            pct_S = Math.sqrt(t) * 100;
+        } else {
+            let t = (T_sys - Tm_B) / (Tm_A - Tm_B);
+            pct_L = Math.sqrt(1 - t) * 100;
+            pct_S = (1 - Math.sqrt(t)) * 100;
+        }
+
+        X_L = pct_L.toFixed(2) + " %";
+        X_S = pct_S.toFixed(2) + " %";
+
+        // Regla de la palanca analítica
+        let frac_S = (X0 - pct_L) / (pct_S - pct_L);
+        let frac_L = (pct_S - X0) / (pct_S - pct_L);
+
+        f_L = (frac_L * 100).toFixed(2) + " %";
+        f_S = (frac_S * 100).toFixed(2) + " %";
+
+        tieLinePoints = [
+            { x: pct_L, y: T_sys },
+            { x: pct_S, y: T_sys }
+        ];
+
+        document.getElementById('bloqueMatematico').innerHTML = 
+            `Desarrollo analítico a ${T_sys}°C:\n` +
+            `• X_L (Líquido) = ${pct_L.toFixed(2)}% ${nameB}\n` +
+            `• X_α (Sólido)  = ${pct_S.toFixed(2)}% ${nameB}\n\n` +
+            `Regla de la Palanca (Lever Rule):\n` +
+            `• f_L = (X_α - X₀) / (X_α - X_L)\n` +
+            `  f_L = (${pct_S.toFixed(2)} - ${X0}) / (${pct_S.toFixed(2)} - ${pct_L.toFixed(2)}) = ${(frac_L).toFixed(4)} (${f_L})\n\n` +
+            `• f_α = (X₀ - X_L) / (X_α - X_L)\n` +
+            `  f_α = (${X0} - ${pct_L.toFixed(2)}) / (${pct_S.toFixed(2)} - ${pct_L.toFixed(2)}) = ${(frac_S).toFixed(4)} (${f_S})`;
+    }
+
+    document.getElementById('badgeEstado').textContent = estado;
+    document.getElementById('resCompL').textContent = X_L;
+    document.getElementById('resCompS').textContent = X_S;
+    document.getElementById('resFracL').textContent = f_L;
+    document.getElementById('resFracS').textContent = f_S;
+
+    // --- CONSTRUCCIÓN GEOMÉTRICA DE CURVAS ---
+    let datosLiquidus = [];
+    let datosSolidus = [];
+
+    for (let i = 0; i <= 100; i += 2) {
+        let x = i / 100;
+        let T_liq, T_sol;
+        if (Tm_B >= Tm_A) {
+            T_liq = Tm_A + (Tm_B - Tm_A) * (2 * x - x * x);
+            T_sol = Tm_A + (Tm_B - Tm_A) * (x * x);
+        } else {
+            T_liq = Tm_B + (Tm_A - Tm_B) * (2 * (1 - x) - (1 - x) * (1 - x));
+            T_sol = Tm_B + (Tm_A - Tm_B) * ((1 - x) * (1 - x));
+        }
+        datosLiquidus.push({ x: i, y: T_liq });
+        datosSolidus.push({ x: i, y: T_sol });
+    }
+
+    renderizarGrafico(datosLiquidus, datosSolidus, { x: X0, y: T_sys }, tieLinePoints, nameB, T_min, T_max);
+}
+
+function renderizarGrafico(liqData, solData, puntoActual, tieLine, efeB, tMin, tMax) {
+    const ctx = document.getElementById('canvasDiagrama').getContext('2d');
+
+    if (chartDiagrama) {
+        chartDiagrama.destroy();
+    }
+
+    chartDiagrama = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Línea de Liquidus',
+                    data: liqData,
+                    borderColor: '#dc2626',
+                    borderWidth: 2.5,
+                    showLine: true,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Línea de Solidus',
+                    data: solData,
+                    borderColor: '#16a34a',
+                    borderWidth: 2.5,
+                    showLine: true,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1
+                },
+                {
+                    label: 'Estado de la Aleación',
+                    data: [puntoActual],
+                    backgroundColor: '#1e3a8a',
+                    pointRadius: 7,
+                    pointHoverRadius: 9,
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Isoterma de Reparto',
+                    data: tieLine,
+                    borderColor: '#0284c7',
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    showLine: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#0284c7',
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    min: 0,
+                    max: 100,
+                    title: { display: true, text: `Composición Global (% en peso de ${efeB})`, font: { weight: 'bold' } }
+                },
+                y: {
+                    type: 'linear',
+                    min: Math.floor(tMin - 50),
+                    max: Math.ceil(tMax + 50),
+                    title: { display: true, text: 'Temperatura (°C)', font: { weight: 'bold' } }
+                }
+            }
+        }
+    });
+}
+
+window.onload = function() {
+    aplicarPreset();
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Metalúrgico: Diagrama Hierro-Carbono (Fe-C)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #f1f5f9; color: #0f172a; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h2, h3 { color: #1e3a8a; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 15px; }
+        .group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #475569; }
+        input[type="number"], input[type="range"] { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        input:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .flex-container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .flex-child { flex: 1; min-width: 360px; }
+        .badge { display: inline-block; padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 15px; margin-top: 5px; text-transform: uppercase; }
+        .steel { background-color: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; }
+        .castiron { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+        th { background-color: #f8fafc; color: #1e293b; font-weight: 600; }
+        .micro-box { background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #1e3a8a; font-size: 14px; line-height: 1.6; }
+        .chart-container { position: relative; height: 500px; width: 100%; }
+            .btn-volver {
+           background-color: #475569;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-volver:hover {
+    background-color: #334155;
+}
+    </style>
+</head>
+<body>
+
+<div class="card">
+   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 style="margin: 0; border: none;">Diagrama Fe-C</h2>
+    <button class="btn-volver" onclick="window.location.href='../../index.html'">← Volver al Índice</button></div>
+    <div class="grid-inputs">
+        <div class="group">
+            <label for="compC">Contenido de Carbono [% en Peso]:</label>
+            <input type="number" id="compC" value="0.40" min="0" max="6.67" step="0.01" oninput="sincronizarSliders('numC')">
+            <input type="range" id="sliderC" min="0" max="6.67" step="0.01" value="0.40" style="margin-top:10px;" oninput="sincronizarSliders('slideC')">
+        </div>
+        <div class="group">
+            <label for="tempC">Temperatura del Sistema [°C]:</label>
+            <input type="number" id="tempC" value="800" min="0" max="1600" step="1" oninput="sincronizarSliders('numT')">
+            <input type="range" id="sliderT" min="0" max="1600" step="5" value="800" style="margin-top:10px;" oninput="sincronizarSliders('slideT')">
+        </div>
+    </div>
+</div>
+
+<div class="flex-container">
+    <div class="card flex-child" style="flex: 1.6;">
+        <h2>2. Diagrama de Fases Metaestable (Fe - Fe₃C)</h2>
+        <div class="chart-container">
+            <canvas id="chartFeC"></canvas>
+        </div>
+    </div>
+    
+    <div class="card flex-child" style="flex: 1;">
+        <h2>3. Clasificación e Información de Fase</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <label>Familia Metalúrgica:</label><br>
+            <span id="badgeFamilia" class="badge steel">-</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Parámetro Mecánico / Metalúrgico</th>
+                    <th>Valor Estimado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Microestructura en Equilibrio</strong></td>
+                    <td id="resFases" style="font-weight: bold; color: #1e3a8a;">-</td>
+                </tr>
+                <tr>
+                    <td><strong>Límite Líquido Local (Liquidus)</strong></td>
+                    <td id="resLiquidus">-</td>
+                </tr>
+                <tr>
+                    <td><strong>Límite Sólido Local (Solidus)</strong></td>
+                    <td id="resSolidus">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Constituyentes y Comportamiento Esperado</h3>
+        <div id="descripcionMicro" class="micro-box">
+            Mueve los controles para analizar las transformaciones microestructurales de la aleación.
+        </div>
+    </div>
+</div>
+
+<script>
+let chartFeC = null;
+
+function sincronizarSliders(origen) {
+    if (origen === 'numC') document.getElementById('sliderC').value = document.getElementById('compC').value;
+    if (origen === 'slideC') document.getElementById('compC').value = document.getElementById('sliderC').value;
+    if (origen === 'numT') document.getElementById('sliderT').value = document.getElementById('tempC').value;
+    if (origen === 'slideT') document.getElementById('tempC').value = document.getElementById('sliderT').value;
+
+    calcularMetalurgia();
+}
+
+function calcularMetalurgia() {
+    const X = parseFloat(document.getElementById('compC').value) || 0;
+    const T = parseFloat(document.getElementById('tempC').value) || 0;
+
+    // --- MODELADO MATEMÁTICO SIMPLIFICADO DE CURVAS CLAVE DEL DIAGRAMA ---
+    // Liquidus (Fusión completa)
+    let T_liq = X <= 4.3 ? 1538 - (390 * X / 4.3) : 1148 + (78 * (X - 4.3) / 2.37);
+    // Solidus (Inicio de fusión)
+    let T_sol = X <= 2.14 ? 1538 - (390 * X / 2.14) : 1148;
+    // A3 (Límite superior Ferrita/Austenita)
+    let T_A3 = X <= 0.76 ? 912 - (185 * X / 0.76) : 727;
+    // Acm (Límite solubilidad Carbono en Austenita)
+    let T_Acm = X >= 0.76 && X <= 2.14 ? 727 + 421 * Math.sqrt((X - 0.76) / 1.38) : 727;
+
+    let familia = "";
+    let microestructura = "";
+    let detalle = "";
+    let claseBadge = "badge steel";
+
+    // 1. Clasificación por contenido de carbono global
+    if (X < 2.14) {
+        if (X < 0.008) {
+            familia = "Hierro Electrolítico / Puro";
+        } else if (X < 0.76) {
+            familia = "Acero Hipoeutectoide";
+        } else if (X === 0.76) {
+            familia = "Acero Eutectoide";
+        } else {
+            familia = "Acero Hipereutectoide";
+        }
+        claseBadge = "badge steel";
+    } else {
+        if (X < 4.3) {
+            familia = "Fundición Blanca Hipoeutéctica";
+        } else if (X === 4.3) {
+            familia = "Fundición Blanca Eutéctica";
+        } else {
+            familia = "Fundición Blanca Hipereutéctica";
+        }
+        claseBadge = "badge castiron";
+    }
+
+    // 2. Determinación de fases presentes según región térmica
+    if (T > T_liq) {
+        microestructura = "Líquido Homogéneo (L)";
+        detalle = "El metal está completamente fundido. No presenta propiedades mecánicas estructurales. Estructura totalmente amorfa líquida.";
+    } else if (T > T_sol) {
+        if (X < 2.14) {
+            microestructura = "Líquido + Austenita (L + γ)";
+            detalle = "Región de consistencia pastosa. Cristales de austenita dendrítica coexisten en una matriz de hierro líquido. Zona crítica para procesos de colada y soldadura.";
+        } else {
+            microestructura = "Líquido + Cementita (L + Fe₃C)";
+            detalle = "Coexistencia de fundición líquida con agujas de cementita primaria (altamente dura y frágil) precipitando directamente del baño fundido.";
+        }
+    } else if (T > 727) {
+        // Región de Austenización y fases de alta temperatura
+        if (X < 0.022) {
+            microestructura = "Ferrita Estable (α)";
+            detalle = "Estructura BCC monofásica muy blanda y dúctil. Solubilidad extremadamente baja de carbono.";
+        } else if (X < 0.76) {
+            if (T > T_A3) {
+                microestructura = "Austenita Homogénea (γ)";
+                detalle = "Estructura FCC. Fase ideal para operaciones de forja y deformación plástica (conformado en caliente) debido a su excelente ductilidad y empaquetamiento atomístico.";
+            } else {
+                microestructura = "Ferrita Proeutectoide + Austenita (α + γ)";
+                detalle = "El material se encuentra en proceso de transformación. Al enfriar, la ferrita nuclea en los límites de grano de la austenita original.";
+            }
+        } else if (X <= 2.14) {
+            if (T > T_Acm) {
+                microestructura = "Austenita Homogénea (γ)";
+                detalle = "Austenita con alto porcentaje de carbono en solución sólida intersticial.";
+            } else {
+                microestructura = "Austenita + Cementita Proeutectoide (γ + Fe₃C)";
+                detalle = "Redes de cementita dura y frágil se forman rodeando los granos de austenita, reduciendo notablemente la resiliencia global del material.";
+            }
+        } else {
+            microestructura = "Austenita + Cementita + Ledeburita (γ + Fe₃C)";
+            detalle = "Estructura típica de fundición a alta temperatura, compuesta por colonias eutécticas e insolubilidad parcial.";
+        }
+    } else {
+        // Región por debajo de la temperatura eutectoide (Temperatura ambiente / Uso ordinario)
+        if (X < 0.022) {
+            microestructura = "Ferrita (α) + Trazas de Cementita";
+            detalle = "Material magnético blando, de muy baja dureza y altísima tenacidad.";
+        } else if (X < 0.76) {
+            micro_porc_perlita = ((X / 0.76) * 100).toFixed(0);
+            microestructura = `Ferrita Proeutectoide + Perlita (~${micro_porc_perlita}%)`;
+            detalle = "Estructura clásica de aceros estructurales comerciales (ej. AISI 1020 o 1040). Balance óptimo entre ductilidad (aportada por la ferrita) y resistencia mecánica (aportada por las láminas de perlita).";
+        } else if (X === 0.76) {
+            microestructura = "Perlita Completa (100%)";
+            detalle = "Estructura laminar perfecta de Ferrita y Cementita. Presenta una respuesta mecánica muy predecible, excelente maquinabilidad y dureza intermedia.";
+        } else if (X < 2.14) {
+            microestructura = "Perlita + Cementita Proeutectoide";
+            detalle = "Acero para herramientas o alta resistencia (ej. limas, cables de alta tensión). Muy resistente al desgaste pero propenso a la fractura frágil si no se trata térmicamente de forma adecuada.";
+        } else {
+            microestructura = "Perlita + Cementita + Ledeburita Transformada";
+            detalle = "Fundición blanca de hierro. Estremadamente dura, imposible de mecanizar mediante herramientas de corte convencionales (requiere rectificado). Excelente resistencia al desgaste abrasivo severo.";
+        }
+    }
+
+    // Volcar textos a la interfaz
+    document.getElementById('badgeFamilia').textContent = familia;
+    document.getElementById('badgeFamilia').className = claseBadge;
+    document.getElementById('resFases').textContent = microestructura;
+    document.getElementById('resLiquidus').textContent = T_liq.toFixed(1) + " °C";
+    document.getElementById('resSolidus').textContent = T_sol.toFixed(1) + " °C";
+    document.getElementById('descripcionMicro').textContent = detalle;
+
+    actualizarGraficoFeC(X, T);
+}
+
+function actualizarGraficoFeC(X, T) {
+    const ctx = document.getElementById('chartFeC').getContext('2d');
+
+    // Trazados estáticos del diagrama Fe-C estandarizados
+    const lineaLiquidus = [{x:0, y:1538}, {x:0.5, y:1510}, {x:2.14, y:1395}, {x:4.3, y:1148}, {x:6.67, y:1226}];
+    const lineaSolidus = [{x:0, y:1538}, {x:0.1, y:1495}, {x:0.16, y:1495}, {x:2.14, y:1148}, {x:6.67, y:1148}];
+    const lineaA3 = [{x:0, y:912}, {x:0.3, y:800}, {x:0.76, y:727}];
+    const lineaAcm = [{x:0.76, y:727}, {x:1.2, y:880}, {x:2.14, y:1148}];
+    const isoterma727 = [{x:0.022, y:727}, {x:6.67, y:727}];
+
+    if (chartFeC) {
+        chartFeC.destroy();
+    }
+
+    chartFeC = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Línea Liquidus',
+                    data: lineaLiquidus,
+                    borderColor: '#dc2626',
+                    borderWidth: 2,
+                    showLine: true,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.05
+                },
+                {
+                    label: 'Línea Solidus',
+                    data: lineaSolidus,
+                    borderColor: '#16a34a',
+                    borderWidth: 2,
+                    showLine: true,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Línea A3 (Límite α)',
+                    data: lineaA3,
+                    borderColor: '#9333ea',
+                    borderWidth: 1.5,
+                    showLine: true,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Línea Acm (Límite Solubilidad)',
+                    data: lineaAcm,
+                    borderColor: '#ea580c',
+                    borderWidth: 1.5,
+                    showLine: true,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Isoterma Eutectoide (727°C)',
+                    data: isoterma727,
+                    borderColor: '#475569',
+                    borderWidth: 1,
+                    borderDash: [4, 4],
+                    showLine: true,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Punto de Análisis Actual',
+                    data: [{x: X, y: T}],
+                    backgroundColor: '#1e3a8a',
+                    pointRadius: 8,
+                    pointHoverRadius: 10,
+                    borderColor: '#ffffff',
+                    borderWidth: 2.5
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: 0,
+                    max: 6.67,
+                    title: { display: true, text: 'Contenido de Carbono (% en peso)', font: { weight: 'bold' } },
+                    grid: { color: '#f1f5f9' }
+                },
+                y: {
+                    type: 'linear',
+                    min: 500,
+                    max: 1600,
+                    title: { display: true, text: 'Temperatura (°C)', font: { weight: 'bold' } },
+                    grid: { color: '#f1f5f9' }
+                }
+            }
+        }
+    });
+}
+
+window.onload = function() {
+    calcularMetalurgia();
+};
+</script>
+
+</body>
+</html>

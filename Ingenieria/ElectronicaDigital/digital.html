@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Electrónica Digital Profesional Avanzado</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --primary: #4a90e2;
+            --secondary: #2ecc71;
+            --dark: #333;
+            --border: #ddd;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--dark);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; color: var(--primary); }
+        .controls, .options-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .options-panel {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        select, button {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 15px;
+        }
+        button {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #357abd; }
+        .btn-danger { background-color: #e74c3c; }
+        .btn-danger:hover { background-color: #c0392b; }
+        .btn-success { background-color: var(--secondary); }
+        .btn-success:hover { background-color: #27ae60; }
+        .btn-sub { background-color: #95a5a6; font-size: 13px; padding: 4px 8px; }
+        .btn-sub:hover { background-color: #7f8c8d; }
+
+        .rule-card {
+            background: #fdfefe;
+            border: 1px solid #ced4da;
+            border-left: 5px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .conditions-list {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .condition-block {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px;
+        }
+        th { background-color: #f1f3f5; }
+        .karnaugh-table { width: auto; margin: 0 auto 15px auto; }
+        .karnaugh-table td { width: 45px; height: 45px; font-weight: bold; }
+
+        .expression {
+            font-family: monospace;
+            font-size: 1.2em;
+            background: #f1f3f5;
+            padding: 12px;
+            border-radius: 6px;
+            word-break: break-all;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        .simplified-box { border-left: 5px solid var(--secondary); background: #e8f8f5; font-weight: bold; }
+        .dark-box { border-left: 5px solid #f39c12; background: #fef9e7; font-weight: bold; }
+        .zeros-box { border-left: 5px solid #e74c3c; background: #fceae9; font-weight: bold; }
+        .zeros-dark-box { border-left: 5px solid #9b59b6; background: #f5eef8; font-weight: bold; }
+
+        .overline { border-top: 2px solid #2c3e50; margin-top: 3px; padding-top: 2px; display: inline-block; }
+
+        .canvas-container {
+            width: 100%;
+            overflow-x: auto;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        canvas { display: block; margin: 0 auto; background: #fff; }
+        .btn-volver {
+            background-color: #475569;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-volver:hover {
+    background-color: #334155;
+}
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+     <div class="sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 style="margin: 0; border: none;">Analizador de Electrónica Digital Avanzado</h2>
+    <button class="btn-volver" onclick="window.location.href='../../index.html'">← Volver al Índice</button>
+    </div>
+
+
+
+    <div class="controls">
+        <label for="variables">Número de Variables:</label>
+        <select id="variables" onchange="inicializarSistema()">
+            <option value="3">3 variables (A, B, C)</option>
+            <option value="4" selected>4 variables (A, B, C, D)</option>
+            <option value="5">5 variables (A, B, C, D, E)</option>
+        </select>
+        <button onclick="calcular()">Calcular y Actualizar</button>
+    </div>
+
+    <div class="options-panel">
+        <label for="gateType">Implementación de Red:</label>
+        <select id="gateType" onchange="calcular()">
+            <option value="ALL">Puertas Mixtas (AND, OR, NOT)</option>
+            <option value="NAND">Solo Puertas NAND (De Morgan SOP)</option>
+            <option value="NOR" selected>Solo Puertas NOR (De Morgan POS / SOP Mapped)</option>
+        </select>
+
+        <label for="gateInputs">Entradas máximas por Puerta:</label>
+        <select id="gateInputs" onchange="calcular()">
+            <option value="2" selected>2 entradas</option>
+            <option value="3">3 entradas</option>
+            <option value="X">Ilimitadas</option>
+        </select>
+
+        <label for="standard">Norma de Símbolos:</label>
+        <select id="standard" onchange="calcular()">
+            <option value="ANSI">ANSI (Esquema Tradicional)</option>
+            <option value="IEC" selected>IEC (Rectangular europeo)</option>
+        </select>
+
+        <label style="margin-left: 15px; color: #2c3e50; font-weight: bold;">
+            <span style="background: #fff3cd; padding: 4px 8px; border-radius: 4px; border: 1px solid #ffeba2;">
+                Circuito a Graficar:
+                <select id="targetCircuit" onchange="calcular()" style="font-weight: bold; border-color: #f39c12;">
+                    <option value="ONES" selected>Trazado por UNOS (SOP)</option>
+                    <option value="ZEROS">Trazado por CEROS (POS)</option>
+                </select>
+            </span>
+        </label>
+    </div>
+
+    <div class="card" style="border-left: 5px solid #9b59b6;">
+        <h3>Definición de Reglas Lógicas</h3>
+        <div id="rulesContainer"></div>
+        <button class="btn-success" onclick="crearNuevaReglaCard()">+ Añadir Nueva Regla</button>
+    </div>
+
+    <div class="grid-container">
+        <div class="card">
+            <h3>Tabla de Verdad Resultante</h3>
+            <div id="truthTableDiv"></div>
+        </div>
+
+        <div class="card">
+            <h3>Mapa de Karnaugh</h3>
+            <div id="kmapDiv"></div>
+        </div>
+
+        <div class="card">
+            <h3>Funciones Globales</h3>
+            <div style="border-bottom: 2px dashed #ddd; margin-bottom: 15px; padding-bottom: 10px;">
+                <h4 style="color: #27ae60; margin: 5px 0;">ANÁLISIS POR UNOS (Suma de Productos)</h4>
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Función Mínima Directa (Karnaugh Unos):</strong></p>
+                <div id="simplifiedExpr" class="expression simplified-box"></div>
+
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Simplificación De Morgan (Unos):</strong></p>
+                <div id="deMorganExpr" class="expression dark-box"></div>
+            </div>
+
+            <div>
+                <h4 style="color: #c0392b; margin: 5px 0;">ANÁLISIS POR CEROS (Producto de Sumas)</h4>
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Función Mínima Directa (Karnaugh Ceros):</strong></p>
+                <div id="simplifiedZerosExpr" class="expression zeros-box"></div>
+
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Simplificación De Morgan (Ceros):</strong></p>
+                <div id="deMorganZerosExpr" class="expression zeros-dark-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>Circuito Lógico con Trazado de Árbol de Expresiones</h3>
+        <p id="circuitLabelInfo">Trazado dinámico unificado según las transformaciones seleccionadas.</p>
+        <div class="canvas-container">
+            <canvas id="circuitCanvas" width="1200" height="550"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    let numVars = 4;
+    let ejecutandoRedimension = false;
+    let ruleCounter = 0;
+
+    function inicializarSistema() {
+        numVars = parseInt(document.getElementById('variables').value);
+        document.getElementById('rulesContainer').innerHTML = '';
+        ruleCounter = 0;
+
+        let r1 = crearNuevaReglaCard("1");
+        agregarCondicionARegla(r1, "A", "0", null);
+        agregarCondicionARegla(r1, "B", "0", "AND");
+
+        let r2 = crearNuevaReglaCard("1");
+        agregarCondicionARegla(r2, "A", "1", null);
+        agregarCondicionARegla(r2, "B", "1", "AND");
+
+        calcular();
+    }
+
+    function obtenerSelectorVariablesHTML(selectedVar = "A") {
+        let html = `<select class="cond-var" onchange="calcular()">`;
+        for(let i=0; i<numVars; i++) {
+            let char = String.fromCharCode(65 + i);
+            html += `<option value="${char}" ${char===selectedVar?'selected':''}>${char}</option>`;
+        }
+        html += `</select>`;
+        return html;
+    }
+
+    function crearNuevaReglaCard(outVal = "1") {
+        const container = document.getElementById('rulesContainer');
+        let id = ruleCounter++;
+
+        let card = document.createElement('div');
+        card.className = 'rule-card';
+        card.id = `rule_card_${id}`;
+
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span><strong>SI las siguientes condiciones se cumplen:</strong></span>
+                <button class="btn-danger" onclick="eliminarReglaCard(${id})" style="padding:3px 8px; font-size:12px;">Eliminar Regla</button>
+            </div>
+            <div class="conditions-list" id="cond_list_${id}"></div>
+            <div style="margin-top:10px; display:flex; align-items:center; gap:15px; flex-wrap:wrap;">
+                <button class="btn-sub" onclick="agregarCondicionPresionada(${id})">+ Añadir Condición</button>
+                <span>&rArr; <strong>entonces Salida (S) =</strong></span>
+                <select class="rule-output-val" onchange="calcular()">
+                    <option value="1" ${outVal==="1"?'selected':''}>1</option>
+                    <option value="0" ${outVal==="0"?'selected':''}>0</option>
+                </select>
+            </div>
+        `;
+        container.appendChild(card);
+        return id;
+    }
+
+    function agregarCondicionPresionada(ruleId) {
+        let lista = document.getElementById(`cond_list_${ruleId}`);
+        let op = lista.children.length > 0 ? "AND" : null;
+        agregarCondicionARegla(ruleId, "A", "1", op);
+        calcular();
+    }
+
+    function agregarCondicionARegla(ruleId, variable, estado, operador) {
+        const lista = document.getElementById(`cond_list_${ruleId}`);
+        let condId = lista.children.length;
+
+        let block = document.createElement('div');
+        block.className = 'condition-block';
+
+        let opHTML = '';
+        if (condId > 0) {
+            opHTML = `<select class="cond-op" onchange="calcular()"><option value="AND" ${operador==='AND'?'selected':''}>Y</option><option value="OR" ${operador==='OR'?'selected':''}>O</option></select>`;
+        } else {
+            opHTML = `<span style="color:#7f8c8d; font-size:13px; font-weight:bold;">Condición inicial:</span>`;
+        }
+
+        block.innerHTML = `
+            ${opHTML}
+            ${obtenerSelectorVariablesHTML(variable)}
+            <span>=</span>
+            <select class="cond-val" onchange="calcular()"><option value="1" ${estado==='1'?'selected':''}>1</option><option value="0" ${estado==='0'?'selected':''}>0</option></select>
+            ${condId > 0 ? `<button style="background:none; color:#e74c3c; border:none; cursor:pointer; font-weight:bold;" onclick="this.parentElement.remove(); calcular();">&times;</button>` : ''}
+        `;
+        lista.appendChild(block);
+    }
+
+    function eliminarReglaCard(id) {
+        document.getElementById(`rule_card_${id}`).remove();
+        calcular();
+    }
+
+    function evaluarMinterminoConReglas(binString) {
+        const vars = Array.from({length: numVars}, (_, i) => String.fromCharCode(65 + i));
+        const estadoVars = {};
+        for(let i=0; i<numVars; i++) estadoVars[vars[i]] = parseInt(binString[i]);
+
+        let valorFinalSalida = 0;
+        const cards = document.querySelectorAll('.rule-card');
+
+        cards.forEach(card => {
+            const blocks = card.querySelectorAll('.condition-block');
+            if(blocks.length === 0) return;
+            let resultadoRegla = false;
+
+            blocks.forEach((block, index) => {
+                let v = block.querySelector('.cond-var').value;
+                let e = parseInt(block.querySelector('.cond-val').value);
+                let cumpleCondicion = (estadoVars[v] === e);
+
+                if (index === 0) {
+                    resultadoRegla = cumpleCondicion;
+                } else {
+                    let op = block.querySelector('.cond-op').value;
+                    if (op === 'AND') resultadoRegla = resultadoRegla && cumpleCondicion;
+                    else if (op === 'OR') resultadoRegla = resultadoRegla || cumpleCondicion;
+                }
+            });
+            if (resultadoRegla) valorFinalSalida = parseInt(card.querySelector('.rule-output-val').value);
+        });
+        return valorFinalSalida;
+    }
+
+    function generarHTMLConBarrasAnidadas(texto) {
+        if(texto === "0" || texto === "1") return texto;
+
+        let output = "";
+        let i = 0;
+        while(i < texto.length) {
+            if(/[A-E]/.test(texto[i])) {
+                let char = texto[i];
+                if(i + 1 < texto.length && texto[i+1] === "'") {
+                    output += `<span class="overline">${char}</span>`;
+                    i += 2;
+                } else {
+                    output += char;
+                    i++;
+                }
+            } else if(texto[i] === '(') {
+                let nivel = 1;
+                let j = i + 1;
+                while(j < texto.length && nivel > 0) {
+                    if(texto[j] === '(') nivel++;
+                    if(texto[j] === ')') nivel--;
+                    j++;
+                }
+                let interior = texto.substring(i + 1, j - 1);
+                let htmlInterior = generarHTMLConBarrasAnidadas(interior);
+
+                if(j < texto.length && texto[j] === "'") {
+                    output += `<span class="overline" style="border-top-width:2px; padding:0 2px;">${htmlInterior}</span>`;
+                    i = j + 1;
+                } else {
+                    output += `(${htmlInterior})`;
+                    i = j;
+                }
+            } else {
+                output += (texto[i] === '·') ? ' &middot; ' : texto[i];
+                i++;
+            }
+        }
+        return output;
+    }
+
+    function calcular() {
+        let minterms = [];
+        let maxterms = [];
+        let totalRows = Math.pow(2, numVars);
+
+        for (let i = 0; i < totalRows; i++) {
+            let bin = i.toString(2).padStart(numVars, '0');
+            let resultadoSalida = evaluarMinterminoConReglas(bin);
+            if (resultadoSalida === 1) minterms.push(i);
+            else maxterms.push(i);
+        }
+
+        generarTablaVerdad(minterms);
+        generarKmap(minterms);
+
+        let simplifiedTextSOP = obtenerSimplificacion(minterms);
+        let simplifiedTextPOS = obtenerSimplificacionPOS(maxterms);
+
+        document.getElementById('simplifiedExpr').innerHTML = `F = ${generarHTMLConBarrasAnidadas(simplifiedTextSOP)}`;
+        document.getElementById('simplifiedZerosExpr').innerHTML = `F = ${generarHTMLConBarrasAnidadas(simplifiedTextPOS)}`;
+
+        let mode = document.getElementById('gateType').value;
+        let deMorganSOPStr = "";
+        let deMorganPOSStr = "";
+
+        // 1. CÁLCULO DE MORGAN PARA UNOS (SOP)
+        if(mode === 'ALL') {
+            deMorganSOPStr = simplifiedTextSOP;
+        } else if(mode === 'NAND') {
+            if (simplifiedTextSOP === "0" || simplifiedTextSOP === "1") deMorganSOPStr = simplifiedTextSOP;
+            else {
+                let bloques = simplifiedTextSOP.split(" + ").map(bloque => {
+                    let b = bloque.trim();
+                    return (b.startsWith("(") && b.endsWith(")'")) ? b : `(${b})'`;
+                });
+                deMorganSOPStr = `(${bloques.join("·")})'`;
+            }
+        } else if(mode === 'NOR') {
+            if (simplifiedTextSOP === "0" || simplifiedTextSOP === "1") deMorganSOPStr = simplifiedTextSOP;
+            else {
+                let bloquesNOR = simplifiedTextSOP.split(" + ").map(bloque => {
+                    let b = bloque.trim();
+                    let variablesEnBloque = b.split("·");
+                    let mapeadoSumasNegadas = variablesEnBloque.map(v => v.endsWith("'") ? v.slice(0, -1) : v + "'");
+                    return `(${mapeadoSumasNegadas.join("+")})'`;
+                });
+                deMorganSOPStr = `(${bloquesNOR.join("+")})'`;
+            }
+        }
+
+        // 2. CÁLCULO DE MORGAN PARA CEROS (POS)
+        if(mode === 'ALL') {
+            deMorganPOSStr = simplifiedTextPOS;
+        } else if(mode === 'NAND') {
+            if (simplifiedTextPOS === "0" || simplifiedTextPOS === "1") deMorganPOSStr = simplifiedTextPOS;
+            else {
+                let bloquesNAND = simplifiedTextPOS.split(" · ").map(bloque => {
+                    let b = bloque.trim().replace(/[\(\)]/g, '');
+                    let variablesEnBloque = b.split("+");
+                    let mapeadoProdNegados = variablesEnBloque.map(v => v.endsWith("'") ? v.slice(0, -1) : v + "'");
+                    return `(${mapeadoProdNegados.join("·")})'`;
+                });
+                deMorganPOSStr = `(${bloquesNAND.join("·")})'`;
+            }
+        } else if(mode === 'NOR') {
+            if (simplifiedTextPOS === "0" || simplifiedTextPOS === "1") deMorganPOSStr = simplifiedTextPOS;
+            else {
+                let bloques = simplifiedTextPOS.split(" · ").map(bloque => {
+                    let b = bloque.trim();
+                    if(b.startsWith("(") && b.endsWith(")")) b = b.substring(1, b.length - 1);
+                    return `(${b})'`;
+                });
+                deMorganPOSStr = `(${bloques.join("+")})'`;
+            }
+        }
+
+        document.getElementById('deMorganExpr').innerHTML = `F = ${generarHTMLConBarrasAnidadas(deMorganSOPStr)}`;
+        document.getElementById('deMorganZerosExpr').innerHTML = `F = ${generarHTMLConBarrasAnidadas(deMorganPOSStr)}`;
+
+        // CONTROL DE SELECCIÓN DE CIRCUITO
+        let targetCircuit = document.getElementById('targetCircuit').value;
+        let stringDeMorganGraficar = (targetCircuit === 'ONES') ? deMorganSOPStr : deMorganPOSStr;
+
+        document.getElementById('circuitLabelInfo').innerHTML = `Graficando árbol para la expresión seleccionada por <strong>${targetCircuit === 'ONES' ? 'UNOS' : 'CEROS'}</strong> empleando compuertas <strong>${mode}</strong>.`;
+
+        ejecutandoRedimension = false;
+        dibujarCircuitoCanvas(simplifiedTextSOP, simplifiedTextPOS, minterms, maxterms, stringDeMorganGraficar, targetCircuit);
+    }
+
+    function generarTablaVerdad(minterms) {
+        let html = '<table><thead><tr>';
+        for (let i = 0; i < numVars; i++) html += `<th>${String.fromCharCode(65 + i)}</th>`;
+        html += '<th>S</th></tr></thead><tbody>';
+
+        let totalRows = Math.pow(2, numVars);
+        for (let i = 0; i < totalRows; i++) {
+            let bin = i.toString(2).padStart(numVars, '0');
+            html += '<tr>';
+            for (let j = 0; j < numVars; j++) html += `<td>${bin[j]}</td>`;
+            let output = minterms.includes(i) ? 1 : 0;
+            html += `<td style="background:${output ? '#d4edda':'#f8d7da'}"><strong>${output}</strong></td></tr>`;
+        }
+        html += '</tbody></table>';
+        document.getElementById('truthTableDiv').innerHTML = html;
+    }
+
+    function generarKmap(minterms) {
+        let html = "";
+        let cols = ['00', '01', '11', '10'];
+        let rows = ['00', '01', '11', '10'];
+
+        if(numVars === 3) {
+            html += '<table class="karnaugh-table"><tr><th>A \\ BC</th>';
+            cols.forEach(c => html += `<th>${c}</th>`);
+            html += '</tr>';
+            let rows3 = ['0', '1'];
+            for(let r=0; r<2; r++) {
+                html += `<tr><th>${rows3[r]}</th>`;
+                for(let c=0; c<4; c++) {
+                    let mValue = parseInt(rows3[r] + cols[c], 2);
+                    let val = minterms.includes(mValue) ? 1 : 0;
+                    html += `<td style="background:${val ? '#e8f8f5':'#fff'}; border: 2px solid #ccc;">${val}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+        } else if(numVars === 4) {
+            html += '<table class="karnaugh-table"><tr><th>AB \\ CD</th>';
+            cols.forEach(c => html += `<th>${c}</th>`);
+            html += '</tr>';
+            for(let r=0; r<4; r++) {
+                html += `<tr><th>${rows[r]}</th>`;
+                for(let c=0; c<4; c++) {
+                    let mValue = parseInt(rows[r] + cols[c], 2);
+                    let val = minterms.includes(mValue) ? 1 : 0;
+                    html += `<td style="background:${val ? '#e8f8f5':'#fff'}; border: 2px solid #ccc;">${val}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+        } else if(numVars === 5) {
+            html += '<div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">';
+            html += '<div><h4>A = 0</h4>';
+            html += '<table class="karnaugh-table"><tr><th>BC \\ DE</th>';
+            cols.forEach(c => html += `<th>${c}</th>`);
+            html += '</tr>';
+            for(let r=0; r<4; r++) {
+                html += `<tr><th>${rows[r]}</th>`;
+                for(let c=0; c<4; c++) {
+                    let mValue = parseInt('0' + rows[r] + cols[c], 2);
+                    let val = minterms.includes(mValue) ? 1 : 0;
+                    html += `<td style="background:${val ? '#e8f8f5':'#fff'}; border: 2px solid #ccc;">${val}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table></div>';
+
+            html += '<div><h4>A = 1</h4>';
+            html += '<table class="karnaugh-table"><tr><th>BC \\ DE</th>';
+            cols.forEach(c => html += `<th>${c}</th>`);
+            html += '</tr>';
+            for(let r=0; r<4; r++) {
+                html += `<tr><th>${rows[r]}</th>`;
+                for(let c=0; c<4; c++) {
+                    let mValue = parseInt('1' + rows[r] + cols[c], 2);
+                    let val = minterms.includes(mValue) ? 1 : 0;
+                    html += `<td style="background:${val ? '#e8f8f5':'#fff'}; border: 2px solid #ccc;">${val}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table></div></div>';
+        }
+        document.getElementById('kmapDiv').innerHTML = html;
+    }
+
+    function obtenerSimplificacion(minterms) {
+        if (minterms.length === 0) return "0";
+        if (minterms.length === Math.pow(2, numVars)) return "1";
+        return ejecutarQuineMcCluskey(minterms, false);
+    }
+
+    function obtenerSimplificacionPOS(maxterms) {
+        if (maxterms.length === 0) return "1";
+        if (maxterms.length === Math.pow(2, numVars)) return "0";
+        return ejecutarQuineMcCluskey(maxterms, true);
+    }
+
+    function ejecutarQuineMcCluskey(codigos, esPOS) {
+        let cubos = codigos.map(m => m.toString(2).padStart(numVars, '0'));
+        let primosImplicantes = [];
+
+        while (cubos.length > 0) {
+            let siguientesCubos = new Set();
+            let marcados = new Set();
+            for (let i = 0; i < cubos.length; i++) {
+                for (let j = i + 1; j < cubos.length; j++) {
+                    let diff = 0, pos = -1;
+                    for (let k = 0; k < numVars; k++) {
+                        if (cubos[i][k] !== cubos[j][k]) { diff++; pos = k; }
+                    }
+                    if (diff === 1) {
+                        let nuevoCubo = cubos[i].substring(0, pos) + '-' + cubos[i].substring(pos + 1);
+                        siguientesCubos.add(nuevoCubo);
+                        marcados.add(cubos[i]); marcados.add(cubos[j]);
+                    }
+                }
+            }
+            for (let c of cubos) { if (!marcados.has(c)) primosImplicantes.push(c); }
+            cubos = Array.from(siguientesCubos);
+        }
+        primosImplicantes = [...new Set(primosImplicantes)];
+
+        let terminosTxt = primosImplicantes.map(cubo => {
+            let txt = [];
+            for (let i = 0; i < numVars; i++) {
+                if (cubo[i] === '1') txt.push(esPOS ? String.fromCharCode(65 + i) + "'" : String.fromCharCode(65 + i));
+                else if (cubo[i] === '0') txt.push(esPOS ? String.fromCharCode(65 + i) : String.fromCharCode(65 + i) + "'");
+            }
+            return esPOS ? `(${txt.join('+')})` : txt.join('·');
+        });
+        return terminosTxt.join(esPOS ? " · " : " + ");
+    }
+
+    function drawGateShape(ctx, type, x, y, isIEC) {
+        ctx.strokeStyle = "#2c3e50"; ctx.fillStyle = "#f4f6f7"; ctx.lineWidth = 2;
+        if (isIEC) {
+            ctx.fillRect(x, y - 15, 40, 30); ctx.strokeRect(x, y - 15, 40, 30);
+            ctx.font = "11px Arial"; ctx.fillStyle = "#333";
+            let sym = (type.startsWith('OR') || type.startsWith('NOR')) ? '≥1' : (type.startsWith('NOT')?'1':'&');
+            ctx.fillText(sym, x + 12, y + 5);
+            if(type.startsWith('NAND') || type.startsWith('NOR') || type.startsWith('NOT')) {
+                ctx.beginPath(); ctx.arc(x + 43, y, 3, 0, 2*Math.PI); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.fill();
+            }
+        } else {
+            if (type.startsWith('AND') || type.startsWith('NAND')) {
+                ctx.beginPath(); ctx.arc(x + 20, y, 15, -Math.PI/2, Math.PI/2); ctx.lineTo(x, y + 15); ctx.lineTo(x, y - 15); ctx.closePath(); ctx.fill(); ctx.stroke();
+            } else if (type.startsWith('OR') || type.startsWith('NOR')) {
+                ctx.beginPath(); ctx.moveTo(x, y - 15); ctx.quadraticCurveTo(x + 10, y, x, y + 15); ctx.quadraticCurveTo(x + 20, y + 12, x + 35, y); ctx.quadraticCurveTo(x + 20, y - 12, x, y - 15); ctx.closePath(); ctx.fill(); ctx.stroke();
+            } else if (type.startsWith('NOT')) {
+                ctx.beginPath(); ctx.moveTo(x, y - 10); ctx.lineTo(x + 20, y); ctx.lineTo(x, y + 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+            }
+            if (type.startsWith('NAND') || type.startsWith('NOR') || type.startsWith('NOT')) {
+                ctx.beginPath(); ctx.arc(x + (type.startsWith('NOT') ? 23 : 38), y, 3, 0, 2*Math.PI); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.fill();
+            }
+        }
+    }
+
+    function drawAdvancedExpressionText(ctx, exprStr, startX, startY) {
+        ctx.save();
+        ctx.font = "12px monospace";
+        let cursorX = startX;
+        let i = 0;
+        while(i < exprStr.length) {
+            if(/[A-E]/.test(exprStr[i])) {
+                let letter = exprStr[i];
+                if(i + 1 < exprStr.length && exprStr[i+1] === "'") {
+                    let w = ctx.measureText(letter).width;
+                    ctx.fillText(letter, cursorX, startY);
+                    ctx.beginPath(); ctx.moveTo(cursorX, startY - 11); ctx.lineTo(cursorX + w, startY - 11); ctx.stroke();
+                    cursorX += w + 2; i += 2;
+                } else {
+                    ctx.fillText(letter, cursorX, startY);
+                    cursorX += ctx.measureText(letter).width + 2; i++;
+                }
+            } else if(exprStr[i] === '(') {
+                let nivel = 1, j = i + 1;
+                while(j < exprStr.length && nivel > 0) {
+                    if(exprStr[j] === '(') nivel++;
+                    if(exprStr[j] === ')') nivel--;
+                    j++;
+                }
+                let interior = exprStr.substring(i + 1, j - 1);
+                if(j < exprStr.length && exprStr[j] === "'") {
+                    let startBlockX = cursorX;
+                    let blockW = drawAdvancedExpressionText(ctx, interior, startBlockX, startY);
+                    ctx.beginPath(); ctx.moveTo(startBlockX - 1, startY - 14); ctx.lineTo(startBlockX + blockW + 1, startY - 14); ctx.stroke();
+                    cursorX = startBlockX + blockW + 3; i = j + 1;
+                } else {
+                    ctx.fillText("(", cursorX, startY); cursorX += ctx.measureText("(").width;
+                    let blockW = drawAdvancedExpressionText(ctx, interior, cursorX, startY); cursorX += blockW;
+                    ctx.fillText(")", cursorX, startY); cursorX += ctx.measureText(")").width; i = j;
+                }
+            } else {
+                let op = exprStr[i] === '·' ? '·' : exprStr[i];
+                ctx.fillText(op, cursorX, startY);
+                cursorX += ctx.measureText(op).width + 2; i++;
+            }
+        }
+        ctx.restore();
+        return cursorX - startX;
+    }
+
+    class LogicNode {
+        constructor(type, inputs = []) {
+            this.type = type; // 'AND', 'OR', 'NAND', 'NOR', 'NOT', 'LITERAL'
+            this.inputs = inputs;
+            this.x = 0; this.y = 0;
+        }
+
+        toExpressionString(mode) {
+            if (this.type === 'LITERAL') return this.inputs[0];
+
+            let op = (mode === 'NOR' || this.type === 'OR' || this.type === 'NOR') ? '+' : '·';
+            if (this.type === 'NOT') {
+                let inner = this.inputs[0];
+                let str = (typeof inner === 'string') ? inner : inner.toExpressionString(mode);
+                return (str.length > 1 && !str.endsWith("'")) ? `(${str})'` : `${str}'`;
+            }
+
+            let parts = this.inputs.map(inp => {
+                let s = (typeof inp === 'string') ? inp : inp.toExpressionString(mode);
+                if (inp.type && inp.type !== 'LITERAL' && inp.type !== 'NOT' && this.type !== inp.type) {
+                    return `(${s})`;
+                }
+                return s;
+            });
+
+            let combined = parts.join(op);
+            if (this.type === 'NAND' || this.type === 'NOR') {
+                return `(${combined})'`;
+            }
+            return combined;
+        }
+    }
+
+    function dibujarCircuitoCanvas(sopText, posText, minterms, maxterms, deMorganText, targetCircuit) {
+        const canvas = document.getElementById("circuitCanvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (minterms.length === 0 || maxterms.length === 0) {
+            ctx.font = "20px Arial"; ctx.fillStyle = "#333";
+            ctx.fillText(minterms.length === 0 ? "Salida constante S = 0" : "Salida constante S = 1", 50, 60);
+            return;
+        }
+
+        let mode = document.getElementById('gateType').value;
+        let isIEC = document.getElementById('standard').value === 'IEC';
+        let maxInputsSelector = document.getElementById('gateInputs').value;
+        let maxEntradasPermitidas = maxInputsSelector === 'X' ? 99 : parseInt(maxInputsSelector);
+
+        // LEER LOS TÉRMINOS SEGÚN LO SELECCIONADO POR EL USUARIO
+        let terminosRaw = (targetCircuit === 'ONES') ? sopText.split(" + ") : posText.split(" · ");
+        let vars = Array.from({length: numVars}, (_, i) => String.fromCharCode(65 + i));
+
+        // 1. Rieles de Variables
+        let xStartVars = 50; let varSpacing = 55; let yLineStart = 40; let varXPos = {};
+        vars.forEach((v, idx) => {
+            let x = xStartVars + (idx * varSpacing); varXPos[v] = x;
+            ctx.fillStyle = "#2c3e50"; ctx.font = "bold 16px Arial"; ctx.fillText(v, x - 5, yLineStart - 10);
+            ctx.strokeStyle = "#34495e"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x, yLineStart); ctx.lineTo(x, canvas.height - 40); ctx.stroke();
+        });
+
+        // Configuración de compuertas
+        let primeraEtapaCompuerta = (targetCircuit === 'ONES') ? 'AND' : 'OR';
+        let segundaEtapaCompuerta = (targetCircuit === 'ONES') ? 'OR' : 'AND';
+
+        if (mode === 'NAND') { primeraEtapaCompuerta = 'NAND'; segundaEtapaCompuerta = 'NAND'; }
+        if (mode === 'NOR') { primeraEtapaCompuerta = 'NOR'; segundaEtapaCompuerta = 'NOR'; }
+
+        let yRowTracker = 60;
+        let X_COL_NOT = 330;
+        let X_COL_COMPUERTAS_PROD = 500;
+        let offsetBurbuja = isIEC ? 46 : 36;
+
+        let compuertasPrimeraEtapaNodos = [];
+
+        // 2. Primera Etapa de Bloques
+        terminosRaw.forEach((term) => {
+            let termLimpio = term.replace(/[\(\)]/g, '');
+            let separators = /[·+]/;
+            let tokens = termLimpio.split(separators);
+            let literales = [];
+
+            tokens.forEach(tok => {
+                let t = tok.trim();
+                if(t.length > 0) {
+                    let charName = t[0];
+                    let isNegated = t.endsWith("'");
+                    literales.push({ name: charName, negated: isNegated });
+                }
+            });
+
+            let inputsNodosDeEstaCompuerta = [];
+
+            literales.forEach((lit) => {
+                let xRiel = varXPos[lit.name];
+                let currentY = yRowTracker;
+                yRowTracker += 45;
+
+                ctx.strokeStyle = "#2980b9"; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(xRiel, currentY);
+
+                // DETERMINACIÓN MATEMÁTICA EXACTA DEL RIEL SEGÚN DE MORGAN (SOP vs POS)
+                let debeNegarseEnRiel = lit.negated;
+                if(targetCircuit === 'ONES' && mode === 'NOR') debeNegarseEnRiel = !lit.negated;
+                if(targetCircuit === 'ZEROS' && mode === 'NAND') debeNegarseEnRiel = !lit.negated;
+
+                if (debeNegarseEnRiel) {
+                    ctx.lineTo(X_COL_NOT, currentY); ctx.stroke();
+                    let tipoInversor = 'NOT';
+                    if (mode === 'NAND') tipoInversor = 'NAND';
+                    if (mode === 'NOR') tipoInversor = 'NOR';
+
+                    if(tipoInversor === 'NAND' || tipoInversor === 'NOR') {
+                        ctx.beginPath(); ctx.moveTo(X_COL_NOT - 12, currentY); ctx.lineTo(X_COL_NOT - 12, currentY - 6); ctx.lineTo(X_COL_NOT, currentY - 6); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(X_COL_NOT - 12, currentY); ctx.lineTo(X_COL_NOT - 12, currentY + 6); ctx.lineTo(X_COL_NOT, currentY + 6); ctx.stroke();
+                    }
+
+                    drawGateShape(ctx, tipoInversor, X_COL_NOT, currentY, isIEC);
+
+                    let xSalidaNot = X_COL_NOT + offsetBurbuja;
+                    ctx.strokeStyle = "#e67e22"; ctx.beginPath();
+                    ctx.moveTo(xSalidaNot, currentY); ctx.lineTo(X_COL_COMPUERTAS_PROD, currentY); ctx.stroke();
+
+                    let nodoNot = new LogicNode('NOT', [new LogicNode('LITERAL', [lit.name])]);
+                    nodoNot.x = xSalidaNot; nodoNot.y = currentY;
+                    inputsNodosDeEstaCompuerta.push(nodoNot);
+                } else {
+                    ctx.lineTo(X_COL_COMPUERTAS_PROD, currentY); ctx.stroke();
+                    let nodoLit = new LogicNode('LITERAL', [lit.name]);
+                    nodoLit.x = xRiel; nodoLit.y = currentY;
+                    inputsNodosDeEstaCompuerta.push(nodoLit);
+                }
+            });
+
+            if(inputsNodosDeEstaCompuerta.length > 0) {
+                let xActualColumn = X_COL_COMPUERTAS_PROD;
+
+                while(inputsNodosDeEstaCompuerta.length > maxEntradasPermitidas) {
+                    let subGrupo = inputsNodosDeEstaCompuerta.splice(0, maxEntradasPermitidas);
+                    let yGateIntermedia = subGrupo.reduce((sum, p) => sum + p.y, 0) / subGrupo.length;
+
+                    subGrupo.forEach(p => {
+                        ctx.strokeStyle = "#7f8c8d"; ctx.beginPath();
+                        ctx.moveTo(p.x, p.y); ctx.lineTo(xActualColumn, p.y); ctx.stroke();
+                    });
+
+                    drawGateShape(ctx, primeraEtapaCompuerta, xActualColumn, yGateIntermedia, isIEC);
+
+                    let xNuevaSalida = xActualColumn + offsetBurbuja;
+                    let xSiguienteColumna = xActualColumn + 65;
+
+                    ctx.strokeStyle = "#27ae60"; ctx.beginPath();
+                    ctx.moveTo(xNuevaSalida, yGateIntermedia); ctx.lineTo(xSiguienteColumna, yGateIntermedia); ctx.stroke();
+
+                    let nodoIntermedio = new LogicNode(primeraEtapaCompuerta, subGrupo);
+                    nodoIntermedio.x = xNuevaSalida; nodoIntermedio.y = yGateIntermedia;
+
+                    inputsNodosDeEstaCompuerta.unshift(nodoIntermedio);
+                    xActualColumn = xSiguienteColumna;
+                }
+
+                let yGate = inputsNodosDeEstaCompuerta.reduce((sum, c) => sum + c.y, 0) / inputsNodosDeEstaCompuerta.length;
+                inputsNodosDeEstaCompuerta.forEach(c => {
+                    ctx.strokeStyle = "#7f8c8d"; ctx.beginPath();
+                    ctx.moveTo(c.x, c.y); ctx.lineTo(xActualColumn, c.y); ctx.stroke();
+                });
+
+                drawGateShape(ctx, primeraEtapaCompuerta, xActualColumn, yGate, isIEC);
+
+                let nodoFinalGrupo = new LogicNode(primeraEtapaCompuerta, inputsNodosDeEstaCompuerta);
+                nodoFinalGrupo.x = xActualColumn + offsetBurbuja; nodoFinalGrupo.y = yGate;
+
+                ctx.fillStyle = "#16a085";
+                drawAdvancedExpressionText(ctx, nodoFinalGrupo.toExpressionString(mode), nodoFinalGrupo.x + 5, yGate - 6);
+
+                compuertasPrimeraEtapaNodos.push(nodoFinalGrupo);
+                yRowTracker += 25;
+            }
+        });
+
+        // 3. Segunda Etapa: Árbol Reunificador
+        let finalLayer = compuertasPrimeraEtapaNodos;
+        let xOutput = 730;
+
+        while (finalLayer.length > 1) {
+            let nextLayer = [];
+            xOutput += 110;
+
+            while (finalLayer.length > 0) {
+                let subGrupo = finalLayer.splice(0, maxEntradasPermitidas);
+                let yGate = subGrupo.reduce((sum, n) => sum + n.y, 0) / subGrupo.length;
+
+                subGrupo.forEach(nod => {
+                    ctx.strokeStyle = "#27ae60"; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(nod.x, nod.y);
+                    ctx.lineTo(xOutput, nod.y);
+                    ctx.lineTo(xOutput, yGate); ctx.stroke();
+                });
+
+                drawGateShape(ctx, segundaEtapaCompuerta, xOutput, yGate, isIEC);
+
+                let compuertaFinalNodo = new LogicNode(segundaEtapaCompuerta, subGrupo);
+                compuertaFinalNodo.x = xOutput + offsetBurbuja; compuertaFinalNodo.y = yGate;
+
+                ctx.fillStyle = "#27ae60";
+                drawAdvancedExpressionText(ctx, compuertaFinalNodo.toExpressionString(mode), xOutput + offsetBurbuja + 5, yGate - 6);
+
+                nextLayer.push(compuertaFinalNodo);
+            }
+            finalLayer = nextLayer;
+        }
+
+        if(finalLayer.length > 0) {
+            let outNode = finalLayer[0];
+            ctx.strokeStyle = "#2c3e50"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(outNode.x, outNode.y); ctx.lineTo(outNode.x + 40, outNode.y); ctx.stroke();
+
+            ctx.fillStyle = "#2c3e50"; ctx.font = "bold 14px Arial";
+            ctx.fillText("S = ", outNode.x + 45, outNode.y + 5);
+
+            let offsetLabel = ctx.measureText("S = ").width;
+            drawAdvancedExpressionText(ctx, outNode.toExpressionString(mode), outNode.x + 45 + offsetLabel, outNode.y + 5);
+        }
+
+        if (yRowTracker > canvas.height && !ejecutandoRedimension) {
+            ejecutandoRedimension = true; canvas.height = yRowTracker + 80;
+            dibujarCircuitoCanvas(sopText, posText, minterms, maxterms, deMorganText, targetCircuit);
+        }
+    }
+
+    window.onload = function() { inicializarSistema(); };
+</script>
+
+</body>
+</html>

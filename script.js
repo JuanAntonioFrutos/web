@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    
+
     // 1. Animación del gráfico de barras al cargar la página
     const bars = document.querySelectorAll('.bar');
     setTimeout(() => {

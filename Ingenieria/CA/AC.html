@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solucionador RLC Avanzado con Escala Dinámica</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1400px; margin: 20px auto; padding: 20px; background-color: #f1f5f9; color: #0f172a; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        h2, h3 { color: #1e3a8a; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #475569; }
+        input, select { padding: 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        input:focus, select:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .flex-layout { display: flex; flex-wrap: wrap; gap: 20px; }
+        .col-graficos { flex: 1.3; min-width: 450px; display: flex; flex-direction: column; gap: 20px; }
+        .col-calculos { flex: 1; min-width: 380px; }
+        .contenedor-grafico { position: relative; height: 320px; width: 100%; }
+        .selector-fasor { display: flex; gap: 15px; margin-bottom: 10px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .selector-fasor label { margin: 0; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        th { background-color: #f8fafc; font-weight: 600; }
+        .polar-box { background: #0f172a; color: #38bdf8; font-family: 'Consolas', monospace; padding: 15px; border-radius: 8px; margin-top: 10px; font-size: 13px; white-space: pre-wrap; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
+        .circuito-svg { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; justify-content: center; padding: 10px; }
+        .btn-volver {
+            background-color: #475569;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-volver:hover {
+    background-color: #334155;
+}
+    </style>
+</head>
+<body>
+
+<div class="card">
+
+     <div class="sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 style="margin: 0; border: none;">Datos de Entrada de la Red de Alterna [v(t) = Vₘ · sin(ωt + θᵥ)]</h2>
+    <button class="btn-volver" onclick="window.location.href='../../index.html'">← Volver al Índice</button>
+    </div>
+
+
+    <div class="grid-inputs">
+        <div class="group">
+            <label>Configuración:</label>
+            <select id="topoCircuito" onchange="calcularTodo()">
+                <option value="serie">RLC Serie</option>
+                <option value="paralelo">RLC Paralelo</option>
+            </select>
+        </div>
+        <div class="group">
+            <label>Tensión Máxima Vₘ [V]:</label>
+            <input type="number" id="vMax" value="325.27" step="0.1" oninput="calcularTodo()">
+        </div>
+        <div class="group">
+            <label>Frec. Angular ω [rad/s]:</label>
+            <input type="number" id="omega" value="314.16" step="0.1" oninput="calcularTodo()">
+        </div>
+        <div class="group">
+            <label>Fase de Tensión θᵥ [°]:</label>
+            <input type="number" id="faseV" value="0" step="1" oninput="calcularTodo()">
+        </div>
+    </div>
+    <div class="grid-inputs">
+        <div class="group"><label>Resistencia R [Ω]:</label><input type="number" id="R" value="40" oninput="calcularTodo()"></div>
+        <div class="group"><label>Inductancia L [mH]:</label><input type="number" id="L" value="300" oninput="calcularTodo()"></div>
+        <div class="group"><label>Capacidad C [μF]:</label><input type="number" id="C" value="55" oninput="calcularTodo()"></div>
+    </div>
+</div>
+
+<div class="flex-layout">
+    <div class="col-graficos">
+        <div class="card" style="margin-bottom: 0;">
+            <h2>2. Diagrama Fasorial del Circuito Compuesto</h2>
+            <div class="selector-fasor">
+                <label><input type="radio" name="tipoFasorCompuesto" value="V" checked onchange="calcularTodo()"> Ver Tensiones (V)</label>
+                <label><input type="radio" name="tipoFasorCompuesto" value="I" onchange="calcularTodo()"> Ver Intensidades por Rama (I)</label>
+            </div>
+            <div class="contenedor-grafico">
+                <canvas id="chartFasores"></canvas>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+            <h2>3. Análisis Comparativo por Componente Ideal (Elementos Puros)</h2>
+            <div class="selector-fasor">
+                <label><input type="radio" name="tipoFasorIdeal" value="V" onchange="calcularTodo()"> Ver Tensiones Individuales (V)</label>
+                <label><input type="radio" name="tipoFasorIdeal" value="I" checked onchange="calcularTodo()"> Ver Intensidades Individuales (I)</label>
+            </div>
+            <div class="contenedor-grafico">
+                <canvas id="chartFasoresIdeales"></canvas>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+            <h2>4. Triángulo de Potencias de Red</h2>
+            <div class="contenedor-grafico">
+                <canvas id="chartPotencias"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-calculos">
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>5. Esquema del Circuito</h2>
+            <div id="contenedorCircuito" class="circuito-svg"></div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+            <h2>6. Resolución Analítica en Polares</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Magnitud</th>
+                        <th>Expresión Polar Mod ∡ de_fase°</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaPolares"></tbody>
+            </table>
+
+            <h3>Memoria e Impedancia de Red</h3>
+            <div id="memoriaPolar" class="polar-box"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let graficoFasores = null;
+let graficoFasoresIdeales = null;
+let graficoPotencias = null;
+
+function calcularTodo() {
+    const topo = document.getElementById('topoCircuito').value;
+    const V_m = parseFloat(document.getElementById('vMax').value) || 0;
+    const omega = parseFloat(document.getElementById('omega').value) || 1;
+    const theta_v_deg = parseFloat(document.getElementById('faseV').value) || 0;
+    const R = parseFloat(document.getElementById('R').value) || 0.001;
+    const L = (parseFloat(document.getElementById('L').value) || 0) / 1000;
+    const C = (parseFloat(document.getElementById('C').value) || 0) / 1000000;
+
+    const deg2rad = Math.PI / 180;
+    const rad2deg = 180 / Math.PI;
+
+    const X_L = omega * L;
+    const X_C = C > 0 ? 1 / (omega * C) : 99999999;
+    const V_ef = V_m / Math.sqrt(2);
+
+    let Z_mod, Z_ang, I_ef, I_ang, cos_phi;
+    let filaHtml = "";
+    let memoriaTexto = "";
+    
+    let fasoresCompuestos = [];
+    let fasoresIdeales = [];
+
+    const selCompuesto = document.querySelector('input[name="tipoFasorCompuesto"]:checked').value;
+    const selIdeal = document.querySelector('input[name="tipoFasorIdeal"]:checked').value;
+
+    // --- CÁLCULOS CIRCUITO SERIE ---
+    if (topo === 'serie') {
+        let X_neta = X_L - X_C;
+        Z_mod = Math.sqrt(R*R + X_neta*X_neta);
+        Z_ang = Math.atan2(X_neta, R) * rad2deg;
+
+        I_ef = V_ef / Z_mod;
+        I_ang = theta_v_deg - Z_ang;
+
+        let V_R_ef = I_ef * R;
+        let V_L_ef = I_ef * X_L;
+        let V_C_ef = I_ef * X_C;
+
+        let V_R_ang = I_ang;
+        let V_L_ang = I_ang + 90;
+        let V_C_ang = I_ang - 90;
+
+        filaHtml += `<tr><td><b>Tensión Fuente (V_ef)</b></td><td>${V_ef.toFixed(1)} V ∡ ${theta_v_deg.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Impedancia Red (Z)</b></td><td>${Z_mod.toFixed(2)} Ω ∡ ${Z_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr style="background:#f0fdf4;"><td><b>Intensidad Total (I_ef)</b></td><td style="color:#16a34a; font-weight:bold;">${I_ef.toFixed(2)} A ∡ ${I_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Caída en R (V_R)</b></td><td>${V_R_ef.toFixed(1)} V ∡ ${V_R_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Caída en L (V_L)</b></td><td>${V_L_ef.toFixed(1)} V ∡ ${V_L_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Caída en C (V_C)</b></td><td>${V_C_ef.toFixed(1)} V ∡ ${V_C_ang.toFixed(1)}°</td></tr>`;
+
+        memoriaTexto = `[ CIRCUITO RLC SERIE ]\n• X_L = ${X_L.toFixed(2)} Ω | X_C = ${X_C.toFixed(2)} Ω\n• Z = R + j(X_L - X_C) = ${R} + j(${(X_neta).toFixed(2)})\n• Z = ${Z_mod.toFixed(2)} Ω ∡ ${Z_ang.toFixed(1)}°`;
+
+        // 1. Asignación gráfico compuesto (Serie)
+        if (selCompuesto === 'V') {
+            fasoresCompuestos = [
+                { label: 'V_Fuente', mod: V_ef, ang: theta_v_deg, color: '#9333ea' },
+                { label: 'V_R', mod: V_R_ef, ang: V_R_ang, color: '#16a34a' },
+                { label: 'V_L', mod: V_L_ef, ang: V_L_ang, color: '#dc2626' },
+                { label: 'V_C', mod: V_C_ef, ang: V_C_ang, color: '#2563eb' }
+            ];
+        } else {
+            fasoresCompuestos = [
+                { label: 'I_Total (Red)', mod: I_ef, ang: I_ang, color: '#0f172a' },
+                { label: 'I_R', mod: I_ef, ang: I_ang, color: '#16a34a' },
+                { label: 'I_L', mod: I_ef, ang: I_ang, color: '#dc2626' },
+                { label: 'I_C', mod: I_ef, ang: I_ang, color: '#2563eb' }
+            ];
+        }
+
+        // 2. Asignación gráfico ideal (Serie)
+        if (selIdeal === 'V') {
+            fasoresIdeales = [
+                { label: 'V_Fuente Real (Suma)', mod: V_ef, ang: theta_v_deg, color: '#9333ea' },
+                { label: 'V_R (Si solo hubiera R)', mod: I_ef * R, ang: I_ang, color: '#16a34a' },
+                { label: 'V_L (Si solo hubiera L)', mod: V_ef, ang: I_ang + 90, color: '#dc2626' },
+                { label: 'V_C (Si solo hubiera C)', mod: V_ef, ang: I_ang - 90, color: '#2563eb' }
+            ];
+        } else {
+            fasoresIdeales = [
+                { label: 'I_Real Compuesta', mod: I_ef, ang: I_ang, color: '#0f172a' },
+                { label: 'I (Si solo fuera R)', mod: V_ef / R, ang: theta_v_deg, color: '#16a34a' },
+                { label: 'I (Si solo fuera L)', mod: V_ef / X_L, ang: theta_v_deg - 90, color: '#dc2626' },
+                { label: 'I (Si solo fuera C)', mod: V_ef * omega * C, ang: theta_v_deg + 90, color: '#2563eb' }
+            ];
+        }
+    } 
+    else {
+        // --- CÁLCULOS CIRCUITO PARALELO ---
+        let G = 1 / R;
+        let B_L = 1 / X_L;
+        let B_C = omega * C;
+        let B_neta = B_C - B_L;
+
+        let Y_mod = Math.sqrt(G*G + B_neta*B_neta);
+        let Y_ang = Math.atan2(B_neta, G) * rad2deg;
+
+        Z_mod = 1 / Y_mod;
+        Z_ang = -Y_ang;
+
+        I_ef = V_ef * Y_mod;
+        I_ang = theta_v_deg + Y_ang;
+
+        let I_R_ef = V_ef / R;
+        let I_L_ef = V_ef / X_L;
+        let I_C_ef = V_ef * omega * C;
+
+        let I_R_ang = theta_v_deg;
+        let I_L_ang = theta_v_deg - 90;
+        let I_C_ang = theta_v_deg + 90;
+
+        filaHtml += `<tr><td><b>Tensión Fuente (V_ef)</b></td><td>${V_ef.toFixed(1)} V ∡ ${theta_v_deg.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Impedancia Equiv. (Z)</b></td><td>${Z_mod.toFixed(2)} Ω ∡ ${Z_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr style="background:#f0fdf4;"><td><b>Intensidad Total (I_ef)</b></td><td style="color:#16a34a; font-weight:bold;">${I_ef.toFixed(2)} A ∡ ${I_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Rama R (I_R)</b></td><td>${I_R_ef.toFixed(2)} A ∡ ${I_R_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Rama L (I_L)</b></td><td>${I_L_ef.toFixed(2)} A ∡ ${I_L_ang.toFixed(1)}°</td></tr>`;
+        filaHtml += `<tr><td><b>Rama C (I_C)</b></td><td>${I_C_ef.toFixed(2)} A ∡ ${I_C_ang.toFixed(1)}°</td></tr>`;
+
+        memoriaTexto = `[ CIRCUITO RLC PARALELO ]\n• Y = G + j(B_C - B_L) = ${G.toFixed(4)} + j(${B_neta.toFixed(4)}) S\n• Z = 1 / Y = ${Z_mod.toFixed(2)} Ω ∡ ${Z_ang.toFixed(1)}°`;
+
+        // 1. Asignación gráfico compuesto (Paralelo)
+        if (selCompuesto === 'V') {
+            fasoresCompuestos = [{ label: 'V_Común', mod: V_ef, ang: theta_v_deg, color: '#9333ea' }];
+        } else {
+            fasoresCompuestos = [
+                { label: 'I_Total (Suma)', mod: I_ef, ang: I_ang, color: '#0f172a' },
+                { label: 'I_R', mod: I_R_ef, ang: I_R_ang, color: '#16a34a' },
+                { label: 'I_L', mod: I_L_ef, ang: I_L_ang, color: '#dc2626' },
+                { label: 'I_C', mod: I_C_ef, ang: I_C_ang, color: '#2563eb' }
+            ];
+        }
+
+        // 2. Asignación gráfico ideal (Paralelo)
+        if (selIdeal === 'V') {
+            fasoresIdeales = [
+                { label: 'V_Común Real', mod: V_ef, ang: theta_v_deg, color: '#9333ea' },
+                { label: 'V_R (Rama R)', mod: V_ef, ang: theta_v_deg, color: '#16a34a' },
+                { label: 'V_L (Rama L)', mod: V_ef, ang: theta_v_deg, color: '#dc2626' },
+                { label: 'V_C (Rama C)', mod: V_ef, ang: theta_v_deg, color: '#2563eb' }
+            ];
+        } else {
+            fasoresIdeales = [
+                { label: 'I_Total Real (Suma)', mod: I_ef, ang: I_ang, color: '#0f172a' },
+                { label: 'I_R Pura', mod: I_R_ef, ang: I_R_ang, color: '#16a34a' },
+                { label: 'I_L Pura', mod: I_L_ef, ang: I_L_ang, color: '#dc2626' },
+                { label: 'I_C Pura', mod: I_C_ef, ang: I_C_ang, color: '#2563eb' }
+            ];
+        }
+    }
+
+    // --- POTENCIAS ---
+    let desfasaje_rad = (theta_v_deg - I_ang) * deg2rad;
+    cos_phi = Math.cos(desfasaje_rad);
+    let S = V_ef * I_ef;
+    let P = S * cos_phi;
+    let Q = S * Math.sin(desfasaje_rad);
+
+    document.getElementById('tablaPolares').innerHTML = filaHtml;
+    document.getElementById('memoriaPolar').textContent = memoriaTexto + `\n• F.P cos(φ) = ${cos_phi.toFixed(3)}\n• Frecuencia de resonancia f₀ = ${(1/(2*Math.PI*Math.sqrt(L*C))).toFixed(1)} Hz`;
+
+    dibujarEsquemaSVG(topo);
+    renderizarPlanoFasorial(graficoFasores, 'chartFasores', fasoresCompuestos);
+    renderizarPlanoFasorial(graficoFasoresIdeales, 'chartFasoresIdeales', fasoresIdeales);
+    renderizarTrianguloPotencias(P, Q, S, (theta_v_deg - I_ang));
+}
+
+function renderizarPlanoFasorial(instanciaGrafico, idCanvas, datosFasores) {
+    const ctx = document.getElementById(idCanvas).getContext('2d');
+    const datasets = datosFasores.map(f => {
+        let x_val = f.mod * Math.cos(f.ang * Math.PI / 180);
+        let y_val = f.mod * Math.sin(f.ang * Math.PI / 180);
+        return {
+            label: `${f.label} [${f.mod.toFixed(2)}∡${f.ang.toFixed(0)}°]`,
+            data: [{x: 0, y: 0}, {x: x_val, y: y_val}],
+            borderColor: f.color,
+            backgroundColor: f.color,
+            borderWidth: f.label.includes('Suma') || f.label.includes('Real') || f.label.includes('Total') ? 4 : 2,
+            pointRadius: [0, 5],
+            showLine: true
+        };
+    });
+
+    if (idCanvas === 'chartFasores' && graficoFasores) graficoFasores.destroy();
+    if (idCanvas === 'chartFasoresIdeales' && graficoFasoresIdeales) graficoFasoresIdeales.destroy();
+
+    // ZOOM AUTOMÁTICO: Encuentra el valor máximo de los vectores cargados en este instante
+    let maxLimit = Math.max(...datosFasores.map(f => f.mod)) * 1.2 || 10;
+
+    let chartCreado = new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { min: -maxLimit, max: maxLimit, grid: { color: '#e2e8f0' }, title: { display: true, text: 'Real' } },
+                y: { min: -maxLimit, max: maxLimit, grid: { color: '#e2e8f0' }, title: { display: true, text: 'Imaginario (j)' } }
+            },
+            plugins: { legend: { labels: { font: { size: 10 } } } }
+        }
+    });
+
+    if (idCanvas === 'chartFasores') graficoFasores = chartCreado;
+    if (idCanvas === 'chartFasoresIdeales') graficoFasoresIdeales = chartCreado;
+}
+
+function renderizarTrianguloPotencias(P, Q, S, angulo) {
+    const ctx = document.getElementById('chartPotencias').getContext('2d');
+    const datasets = [
+        { label: `P (Activa): ${P.toFixed(1)} W`, data: [{x:0, y:0}, {x: P, y: 0}], borderColor: '#16a34a', borderWidth: 3, showLine: true, pointRadius: 0 },
+        { label: `Q (Reactiva): ${Q.toFixed(1)} VAr`, data: [{x: P, y: 0}, {x: P, y: Q}], borderColor: '#ea580c', borderWidth: 3, showLine: true, pointRadius: 0 },
+        { label: `S (Aparente): ${S.toFixed(1)} VA`, data: [{x: 0, y: 0}, {x: P, y: Q}], borderColor: '#2563eb', borderWidth: 4, showLine: true, pointRadius: [0, 5] }
+    ];
+
+    if (graficoPotencias) graficoPotencias.destroy();
+
+    graficoPotencias = new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { min: 0, max: Math.max(P, 10) * 1.25 },
+                y: { min: Math.min(0, Q) * 1.25, max: Math.max(0, Q) * 1.25 }
+            }
+        }
+    });
+}
+
+function dibujarEsquemaSVG(topo) {
+    const cont = document.getElementById('contenedorCircuito');
+    if (topo === 'serie') {
+        cont.innerHTML = `
+        <svg width="340" height="120" viewBox="0 0 340 120" style="font-family:sans-serif; font-size:11px;">
+            <circle cx="40" cy="60" r="16" fill="none" stroke="#1e3a8a" stroke-width="2"/>
+            <path d="M 32 60 Q 36 50 40 60 T 48 60" fill="none" stroke="#1e3a8a" stroke-width="2"/>
+            <path d="M 40 44 L 40 20 L 90 20 M 130 20 L 170 20 M 210 20 L 250 20 L 250 100 L 40 100 L 40 76" fill="none" stroke="#475569" stroke-width="1.5"/>
+            <path d="M 90 20 L 95 12 L 101 28 L 107 12 L 113 28 L 119 12 L 125 28 L 130 20" fill="none" stroke="#16a34a" stroke-width="2"/>
+            <text x="105" y="42" fill="#16a34a" font-weight="bold">R</text>
+            <path d="M 170 20 Q 175 10 180 20 Q 185 10 190 20 Q 195 10 200 20 Q 205 10 210 20" fill="none" stroke="#dc2626" stroke-width="2"/>
+            <text x="187" y="42" fill="#dc2626" font-weight="bold">L</text>
+            <line x1="250" y1="45" x2="235" y2="45" stroke="#2563eb" stroke-width="3"/>
+            <line x1="250" y1="55" x2="235" y2="55" stroke="#2563eb" stroke-width="3"/>
+            <path d="M 250 20 L 250 45 M 250 55 L 250 100" fill="none" stroke="#475569" stroke-width="1.5"/>
+            <text x="260" y="54" fill="#2563eb" font-weight="bold">C</text>
+        </svg>`;
+    } else {
+        cont.innerHTML = `
+        <svg width="340" height="130" viewBox="0 0 340 130" style="font-family:sans-serif; font-size:11px;">
+            <circle cx="40" cy="65" r="16" fill="none" stroke="#1e3a8a" stroke-width="2"/>
+            <path d="M 32 65 Q 36 55 40 65 T 48 65" fill="none" stroke="#1e3a8a" stroke-width="2"/>
+            <path d="M 40 49 L 40 25 L 260 25 M 40 81 L 40 105 L 260 105" fill="none" stroke="#475569" stroke-width="1.5"/>
+            <path d="M 120 25 L 120 45 L 112 50 L 128 56 L 112 62 L 128 68 L 112 74 L 120 80 L 120 105" fill="none" stroke="#16a34a" stroke-width="1.5"/>
+            <text x="132" y="65" fill="#16a34a" font-weight="bold">R</text>
+            <path d="M 190 25 L 190 45 Q 180 50 190 55 Q 180 60 190 65 Q 180 70 190 75 Q 180 80 190 85 L 190 105" fill="none" stroke="#dc2626" stroke-width="1.5"/>
+            <text x="202" y="65" fill="#dc2626" font-weight="bold">L</text>
+            <path d="M 260 25 L 260 55 M 260 65 L 260 105" fill="none" stroke="#475569" stroke-width="1.5"/>
+            <line x1="250" y1="55" x2="270" y2="55" stroke="#2563eb" stroke-width="2.5"/>
+            <line x1="250" y1="65" x2="270" y2="65" stroke="#2563eb" stroke-width="2.5"/>
+            <text x="278" y="65" fill="#2563eb" font-weight="bold">C</text>
+        </svg>`;
+    }
+}
+
+window.onload = function() { calcularTodo(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Profesional de Máquinas Térmicas (Potencia/Energía)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1000px; margin: 20px auto; padding: 20px; background-color: #f8fafc; color: #0f172a; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h2, h3 { color: #1e3a8a; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 15px; }
+        .group { display: flex; flex-direction: column; }
+        label { font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #475569; }
+        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background-color: #fff; }
+        input:focus, select:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        .flex-container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .flex-child { flex: 1; min-width: 300px; }
+        .alert { background-color: #fef3c7; border-left: 4px solid #d97706; padding: 12px; border-radius: 4px; color: #92400e; font-size: 13px; margin-bottom: 15px; font-weight: 500; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background-color: #f1f5f9; color: #1e293b; font-weight: 600; }
+        tr:hover { background-color: #f8fafc; }
+        .val-destacado { font-weight: bold; color: #2563eb; }
+        #canvasMaquina { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; display: block; margin: 0 auto; }
+        .chart-container { position: relative; height: 320px; width: 100%; }
+        .btn-volver {
+            background-color: #475569;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-volver:hover {
+    background-color: #334155;
+}
+    </style>
+</head>
+<body>
+
+<div class="card">
+
+      <div class="sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 style="margin: 0; border: none;">Parámetros de Operación de la Máquina Térmica</h2>
+    <button class="btn-volver" onclick="window.location.href='../../index.html'">← Volver al Índice</button>
+    </div>
+    <div class="grid">
+        <div class="group">
+            <label for="tipoMaquina">Tipo de Máquina:</label>
+            <select id="tipoMaquina" onchange="adaptarFormulario(); calcularTermo();">
+                <option value="motor">Motor Térmico (Produce Trabajo)</option>
+                <option value="frigorifico">Frigorífico / AA (Extrae Calor)</option>
+                <option value="bomba">Bomba de Calor (Aporta Calor)</option>
+            </select>
+        </div>
+        <div class="group">
+            <label for="tipoMagnitud">Tipo de Magnitud de Entrada:</label>
+            <select id="tipoMagnitud" onchange="adaptarFormulario(); calcularTermo();">
+                <option value="kW">Potencia / Flujo [kW]</option>
+                <option value="kJ">Energía Total [kJ]</option>
+            </select>
+        </div>
+        <div class="group">
+            <label for="tempAlta">Temperatura Fuente Caliente (T_H) [°C]:</label>
+            <input type="number" id="tempAlta" value="450" step="any" oninput="calcularTermo()">
+        </div>
+        <div class="group">
+            <label for="tempBaja">Temperatura Fuente Fría (T_L) [°C]:</label>
+            <input type="number" id="tempBaja" value="25" step="any" oninput="calcularTermo()">
+        </div>
+    </div>
+    
+    <div class="grid" style="grid-template-columns: 2fr 1fr;">
+        <div class="group">
+            <label id="lblFlujoEnergia" for="flujoEnergia">Valor de Entrada:</label>
+            <input type="number" id="flujoEnergia" value="100" step="any" oninput="calcularTermo()">
+        </div>
+        <div class="group">
+            <label for="eficienciaRelativa">Eficiencia respecto a Carnot [%]:</label>
+            <input type="number" id="eficienciaRelativa" value="65" min="1" max="100" step="any" oninput="calcularTermo()">
+        </div>
+    </div>
+    <div id="avisoTemperatura" class="alert style-warning" style="display:none;">
+        ¡Atención! La temperatura de la fuente caliente debe ser estrictamente mayor que la fuente fría.
+    </div>
+</div>
+
+<div class="flex-container">
+    <div class="card flex-child" style="flex: 1.2;">
+        <h2>2. Diagrama de Flujos Energéticos</h2>
+        <canvas id="canvasMaquina" width="380" height="340"></canvas>
+    </div>
+    
+    <div class="card flex-child" style="flex: 1.8;">
+        <h2>3. Resultados del Análisis Termodinámico</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Variable Analizada</th>
+                    <th>Límite Ideal (Carnot)</th>
+                    <th>Operación Real</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="lblRendimiento">Rendimiento Térmico (η) / COP</td>
+                    <td id="resRendIdeal" class="val-destacado">-</td>
+                    <td id="resRendReal" class="val-destacado" style="color:#dc2626;">-</td>
+                </tr>
+                <tr>
+                    <td id="lblTrabajo">Potencia Neta o Trabajo (W)</td>
+                    <td id="resTrabajoIdeal">-</td>
+                    <td id="resTrabajoReal">-</td>
+                </tr>
+                <tr>
+                    <td id="lblQAlta">Calor Fuente Caliente (Q_H)</td>
+                    <td id="resQAltaIdeal">-</td>
+                    <td id="resQAltaReal">-</td>
+                </tr>
+                <tr>
+                    <td id="lblQBaja">Calor Fuente Fría (Q_L)</td>
+                    <td id="resQBajaIdeal">-</td>
+                    <td id="resQBajaReal">-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <h2 id="lblGraficaTitulo">4. Comparativa de Distribución [kW]</h2>
+    <div class="chart-container">
+        <canvas id="chartTermo"></canvas>
+    </div>
+</div>
+
+<script>
+let chartTermo = null;
+
+function adaptarFormulario() {
+    const tipo = document.getElementById('tipoMaquina').value;
+    const uni = document.getElementById('tipoMagnitud').value;
+    const lblFlujo = document.getElementById('lblFlujoEnergia');
+    
+    // Ajustar etiquetas de entrada según máquina y unidad
+    if (tipo === 'motor') {
+        lblFlujo.textContent = `Calor Absorbido / Añadido (Q_H) [${uni}]:`;
+        document.getElementById('lblRendimiento').textContent = "Rendimiento Térmico (η)";
+    } else if (tipo === 'frigorifico') {
+        lblFlujo.textContent = `Calor Extraído / Refrigeración (Q_L) [${uni}]:`;
+        document.getElementById('lblRendimiento').textContent = "Coeficiente de Operación (COP_R)";
+    } else if (tipo === 'bomba') {
+        lblFlujo.textContent = `Calor Aportado / Calefacción (Q_H) [${uni}]:`;
+        document.getElementById('lblRendimiento').textContent = "Coeficiente de Operación (COP_BC)";
+    }
+
+    // Ajustar nombres de filas en la tabla de salida
+    const conceptoTrabajo = uni === 'kW' ? 'Potencia Neta (W) [kW]' : 'Trabajo Neto (W) [kJ]';
+    const conceptoQAlta = uni === 'kW' ? 'Flujo Calorífico Caliente (Q_H) [kW]' : 'Calor Fuente Caliente (Q_H) [kJ]';
+    const conceptoQBaja = uni === 'kW' ? 'Flujo Calorífico Frío (Q_L) [kW]' : 'Calor Fuente Fría (Q_L) [kJ]';
+
+    document.getElementById('lblTrabajo').textContent = conceptoTrabajo;
+    document.getElementById('lblQAlta').textContent = conceptoQAlta;
+    document.getElementById('lblQBaja').textContent = conceptoQBaja;
+    
+    // Título de la gráfica
+    document.getElementById('lblGraficaTitulo').textContent = `4. Comparativa de Distribución Energética [${uni}]`;
+}
+
+function calcularTermo() {
+    const tipo = document.getElementById('tipoMaquina').value;
+    const uni = document.getElementById('tipoMagnitud').value;
+    const Th_c = parseFloat(document.getElementById('tempAlta').value) || 0;
+    const Tl_c = parseFloat(document.getElementById('tempBaja').value) || 0;
+    const energiaInput = parseFloat(document.getElementById('flujoEnergia').value) || 0;
+    const efRel = (parseFloat(document.getElementById('eficienciaRelativa').value) || 0) / 100;
+
+    const aviso = document.getElementById('avisoTemperatura');
+    if (Th_c <= Tl_c) {
+        aviso.style.display = 'block';
+        return;
+    } else {
+        aviso.style.display = 'none';
+    }
+
+    const Th = Th_c + 273.15;
+    const Tl = Tl_c + 273.15;
+
+    let rendIdeal = 0;
+    let rendReal = 0;
+    let W_ideal = 0, QH_ideal = 0, QL_ideal = 0;
+    let W_real = 0, QH_real = 0, QL_real = 0;
+
+    if (tipo === 'motor') {
+        rendIdeal = 1 - (Tl / Th);
+        rendReal = rendIdeal * efRel;
+
+        QH_ideal = energiaInput;
+        QH_real = energiaInput;
+
+        W_ideal = QH_ideal * rendIdeal;
+        W_real = QH_real * rendReal;
+
+        QL_ideal = QH_ideal - W_ideal;
+        QL_real = QH_real - W_real;
+
+        document.getElementById('resRendIdeal').textContent = (rendIdeal * 100).toFixed(2) + " %";
+        document.getElementById('resRendReal').textContent = (rendReal * 100).toFixed(2) + " %";
+    } 
+    else if (tipo === 'frigorifico') {
+        rendIdeal = Tl / (Th - Tl);
+        rendReal = rendIdeal * efRel;
+
+        QL_ideal = energiaInput;
+        QL_real = energiaInput;
+
+        W_ideal = QL_ideal / rendIdeal;
+        W_real = QL_real / rendReal;
+
+        QH_ideal = QL_ideal + W_ideal;
+        QH_real = QL_real + W_real;
+
+        document.getElementById('resRendIdeal').textContent = rendIdeal.toFixed(2);
+        document.getElementById('resRendReal').textContent = rendReal.toFixed(2);
+    } 
+    else if (tipo === 'bomba') {
+        rendIdeal = Th / (Th - Tl);
+        rendReal = rendIdeal * efRel;
+
+        QH_ideal = energiaInput;
+        QH_real = energiaInput;
+
+        W_ideal = QH_ideal / rendIdeal;
+        W_real = QL_real = QH_real / rendReal; // Nota matemática corregida
+
+        W_real = QH_real / rendReal;
+        QL_ideal = QH_ideal - W_ideal;
+        QL_real = QH_real - W_real;
+
+        document.getElementById('resRendIdeal').textContent = rendIdeal.toFixed(2);
+        document.getElementById('resRendReal').textContent = rendReal.toFixed(2);
+    }
+
+    // Volcar datos numéricos añadiendo dinámicamente la unidad seleccionada
+    document.getElementById('resTrabajoIdeal').textContent = `${W_ideal.toFixed(2)} ${uni}`;
+    document.getElementById('resTrabajoReal').textContent = `${W_real.toFixed(2)} ${uni}`;
+    document.getElementById('resQAltaIdeal').textContent = `${QH_ideal.toFixed(2)} ${uni}`;
+    document.getElementById('resQAltaReal').textContent = `${QH_real.toFixed(2)} ${uni}`;
+    document.getElementById('resQBajaIdeal').textContent = `${QL_ideal.toFixed(2)} ${uni}`;
+    document.getElementById('resQBajaReal').textContent = `${QL_real.toFixed(2)} ${uni}`;
+
+    // Dibujar esquemas y refrescar gráficos
+    dibujarEsquemaTermo(tipo, Th_c, Tl_c, uni);
+    actualizarGrafica(W_ideal, QH_ideal, QL_ideal, W_real, QH_real, QL_real, uni);
+}
+
+function dibujarEsquemaTermo(tipo, Th, Tl, uni) {
+    const canvas = document.getElementById('canvasMaquina');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width; const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const txtU = uni; // Puede ser kW o kJ
+
+    // Fuente Caliente T_H
+    ctx.fillStyle = '#fca5a5'; ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+    ctx.fillRect(50, 20, 280, 50); ctx.strokeRect(50, 20, 280, 50);
+    ctx.fillStyle = '#7f1d1d'; ctx.font = "bold 14px Arial";
+    ctx.fillText(`Fuente Caliente (T_H): ${Th.toFixed(1)} °C`, 75, 50);
+
+    // Máquina Cíclica
+    ctx.beginPath(); ctx.arc(w/2, h/2, 45, 0, 2*Math.PI);
+    ctx.fillStyle = '#e2e8f0'; ctx.fill(); ctx.strokeStyle = '#475569'; ctx.stroke();
+    ctx.fillStyle = '#0f172a'; ctx.font = "bold 13px Arial";
+    let textoMaquina = tipo === 'motor' ? 'MOTOR' : tipo === 'frigorifico' ? 'FRIG.' : 'B. CALOR';
+    ctx.fillText(textoMaquina, w/2 - 25, h/2 + 5);
+
+    // Fuente Fría T_L
+    ctx.fillStyle = '#93c5fd'; ctx.strokeStyle = '#2563eb';
+    ctx.fillRect(50, h - 70, 280, 50); ctx.strokeRect(50, h - 70, 280, 50);
+    ctx.fillStyle = '#1e3a8a';
+    ctx.fillText(`Fuente Fría (T_L): ${Tl.toFixed(1)} °C`, 90, h - 40);
+
+    ctx.lineWidth = 4;
+    if (tipo === 'motor') {
+        ctx.strokeStyle = '#dc2626'; ctx.fillStyle = '#dc2626';
+        dibujarFlechaTermo(ctx, w/2, 70, w/2, h/2 - 45);
+        ctx.fillText(`Q_H [${txtU}]`, w/2 + 10, h/2 - 60);
+
+        ctx.strokeStyle = '#2563eb'; ctx.fillStyle = '#2563eb';
+        dibujarFlechaTermo(ctx, w/2, h/2 + 45, w/2, h - 70);
+        ctx.fillText(`Q_L [${txtU}]`, w/2 + 10, h/2 + 70);
+
+        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a';
+        dibujarFlechaTermo(ctx, w/2 + 45, h/2, w - 40, h/2);
+        ctx.fillText(`W [${txtU}]`, w - 75, h/2 - 12);
+    } else {
+        ctx.strokeStyle = '#2563eb'; ctx.fillStyle = '#2563eb';
+        dibujarFlechaTermo(ctx, w/2, h - 70, w/2, h/2 + 45);
+        ctx.fillText(`Q_L [${txtU}]`, w/2 + 10, h/2 + 70);
+
+        ctx.strokeStyle = '#dc2626'; ctx.fillStyle = '#dc2626';
+        dibujarFlechaTermo(ctx, w/2, h/2 - 45, w/2, 70);
+        ctx.fillText(`Q_H [${txtU}]`, w/2 + 10, h/2 - 60);
+
+        ctx.strokeStyle = '#16a34a'; ctx.fillStyle = '#16a34a';
+        dibujarFlechaTermo(ctx, 20, h/2, w/2 - 45, h/2);
+        ctx.fillText(`W [${txtU}]`, 25, h/2 - 12);
+    }
+}
+
+function dibujarFlechaTermo(ctx, fromX, fromY, toX, toY) {
+    const headlen = 10; const angle = Math.atan2(toY - fromY, toX - fromX);
+    ctx.beginPath(); ctx.moveTo(fromX, fromY); ctx.lineTo(toX, toY); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(toX, toY);
+    ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+    ctx.fill();
+}
+
+function actualizarGrafica(Wi, QHi, QLi, Wr, QHr, QLr, uni) {
+    const ctx = document.getElementById('chartTermo').getContext('2d');
+    
+    if (chartTermo) {
+        chartTermo.destroy();
+    }
+
+    const etiquetaEje = uni === 'kW' ? 'Trabajo / Calor Neta (W)' : 'Energía / Trabajo (W)';
+
+    chartTermo = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [uni === 'kW' ? 'Potencia Neta (W)' : 'Trabajo Neto (W)', 'Calor Foco Caliente (Q_H)', 'Calor Foco Frío (Q_L)'],
+            datasets: [
+                {
+                    label: `Límite Carnot (Ideal) [${uni}]`,
+                    data: [Wi, QHi, QLi],
+                    backgroundColor: '#cbd5e1',
+                    borderWidth: 1
+                },
+                {
+                    label: `Operación Real [${uni}]`,
+                    data: [Wr, QHr, QLr],
+                    backgroundColor: ['#16a34a', '#dc2626', '#2563eb'],
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: `Valor medido en [${uni}]` }
+                }
+            }
+        }
+    });
+}
+
+window.onload = function() {
+    adaptarFormulario();
+    calcularTermo();
+};
+</script>
+
+</body>
+</html>

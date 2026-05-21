@@ -1,425 +1,136 @@
-// Variables globales exclusivas para el cálculo de vigas
-let contadorCargas = 0;
-let chartN = null;
-let chartV = null;
-let chartM = null;
-
-document.addEventListener("DOMContentLoaded", () => {
-    
-    // ==========================================
-    // LÓGICA INTERACTIVA DEL INDEX PRINCIPAL
-    // ==========================================
-    const bars = document.querySelectorAll('.bar');
-    if (bars.length > 0) {
-        setTimeout(() => {
-            bars.forEach(bar => {
-                const targetHeight = bar.style.getPropertyValue('--target-height');
-                bar.style.height = targetHeight;
-            });
-        }, 200);
-    }
-
-    const button = document.getElementById('btn-interact');
-    const message = document.getElementById('hidden-message');
-    if (button && message) {
-        button.addEventListener('click', () => {
-            if (message.classList.contains('hidden')) {
-                message.classList.remove('hidden');
-                button.textContent = 'Ocultar mensaje';
-            } else {
-                message.classList.add('hidden');
-                button.textContent = '¿Quieres saber más?';
-            }
-        });
-    }
-
-    // ==========================================
-    // INICIALIZACIÓN EXCLUSIVA DE LAS VIGAS
-    // ==========================================
-    if (document.body.classList.contains('page-vigas')) {
-        agregarCarga();
-        toggleVoladizo();
-    }
-});
-
-// ==========================================
-// FUNCIONES DEL SOFTWARE DE CÁLCULO DE VIGAS
-// ==========================================
-function toggleVoladizo() {
-    const tipo = document.getElementById('tipoViga').value;
-    const seccionVoladizo = document.getElementById('seccionVoladizo');
-    const tieneVoladizo = document.getElementById('tieneVoladizo').value;
-    const camposVol = document.querySelectorAll('.id-voladizo');
-
-    if (!seccionVoladizo) return;
-
-    if (tipo !== "biapoyada") {
-        seccionVoladizo.classList.add('hidden');
-        camposVol.forEach(el => el.classList.add('hidden'));
-        document.getElementById('tieneVoladizo').value = "no";
-    } else {
-        seccionVoladizo.classList.remove('hidden');
-        if (tieneVoladizo === "si") {
-            camposVol.forEach(el => el.classList.remove('hidden'));
-        } else {
-            camposVol.forEach(el => el.classList.add('hidden'));
-        }
-    }
+/* Reset global */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-function agregarCarga() {
-    const contenedor = document.getElementById('contenedorCargas');
-    if (!contenedor) return;
-    const id = contadorCargas++;
-    
-    const div = document.createElement('div');
-    div.className = 'carga-row';
-    div.id = `carga_${id}`;
-    div.innerHTML = `
-        <div class="grid" style="grid-template-columns: 1.2fr repeat(auto-fit, minmax(90px, 1fr)) 40px; align-items: end;">
-            <div class="group">
-                <label>Tipo de Carga:</label>
-                <select id="tipo_${id}" onchange="adaptarInputsCarga(${id}); calcularTodo();">
-                    <option value="puntual">Puntual Inclinada</option>
-                    <option value="uniforme">Uniforme (Vertical)</option>
-                    <option value="triangular">Triangular (Vertical)</option>
-                </select>
-            </div>
-            <div class="group" id="cont_val1_${id}">
-                <label id="lbl_val1_${id}">Magnitud P [kN]:</label>
-                <input type="number" id="val1_${id}" value="10" step="any" oninput="calcularTodo()">
-            </div>
-            <div class="group hidden" id="cont_val2_${id}">
-                <label id="lbl_val2_${id}">q_final [kN/m]:</label>
-                <input type="number" id="val2_${id}" value="0" step="any" oninput="calcularTodo()">
-            </div>
-            <div class="group" id="cont_ang_${id}">
-                <label>Ángulo θ [°]:</label>
-                <input type="number" id="ang_${id}" value="90" min="0" max="180" step="any" oninput="calcularTodo()" placeholder="90° vertical">
-            </div>
-            <div class="group" id="cont_pos_${id}">
-                <label id="lbl_pos_${id}">Posición x [m]:</label>
-                <input type="number" id="pos_${id}" value="2" step="any" oninput="calcularTodo()">
-            </div>
-            <div class="group hidden" id="cont_long_${id}">
-                <label id="lbl_long_${id}">Longitud [m]:</label>
-                <input type="number" id="long_${id}" value="2" step="any" oninput="calcularTodo()">
-            </div>
-            <button class="btn" style="background:#ef4444; padding: 10px; height: 40px; width: auto;" onclick="eliminarCarga(${id})">X</button>
-        </div>
-    `;
-    contenedor.appendChild(div);
-    calcularTodo();
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background-color: #0f172a;
+    color: #f8fafc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 2rem 1rem;
 }
 
-function eliminarCarga(id) {
-    document.getElementById(`carga_${id}`).remove();
-    calcularTodo();
+.container {
+    padding: 2rem;
+    max-width: 600px;
+    width: 100%;
 }
 
-function adaptarInputsCarga(id) {
-    const tipo = document.getElementById(`tipo_${id}`).value;
-    const c_val1 = document.getElementById(`cont_val1_${id}`);
-    const c_val2 = document.getElementById(`cont_val2_${id}`);
-    const c_ang = document.getElementById(`cont_ang_${id}`);
-    const c_pos = document.getElementById(`cont_pos_${id}`);
-    const c_long = document.getElementById(`cont_long_${id}`);
-
-    if (tipo === "puntual") {
-        document.getElementById(`lbl_val1_${id}`).textContent = "Magnitud P [kN]:";
-        document.getElementById(`lbl_pos_${id}`).textContent = "Posición x [m]:";
-        c_val1.classList.remove('hidden'); c_val2.classList.add('hidden'); c_ang.classList.remove('hidden'); c_pos.classList.remove('hidden'); c_long.classList.add('hidden');
-    } else if (tipo === "uniforme") {
-        document.getElementById(`lbl_val1_${id}`).textContent = "Carga q [kN/m]:";
-        document.getElementById(`lbl_pos_${id}`).textContent = "Inicio x [m]:";
-        c_val1.classList.remove('hidden'); c_val2.classList.add('hidden'); c_ang.classList.add('hidden'); c_pos.classList.remove('hidden'); c_long.classList.remove('hidden');
-    } else if (tipo === "triangular") {
-        document.getElementById(`lbl_val1_${id}`).textContent = "q_inicial [kN/m]:";
-        document.getElementById(`lbl_val2_${id}`).textContent = "q_final [kN/m]:";
-        document.getElementById(`lbl_pos_${id}`).textContent = "Inicio x [m]:";
-        c_val1.classList.remove('hidden'); c_val2.classList.remove('hidden'); c_ang.classList.add('hidden'); c_pos.classList.remove('hidden'); c_long.classList.remove('hidden');
-    }
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #38bdf8;
 }
 
-function obtenerCargas(L_total) {
-    let cargas = [];
-    const contenedor = document.getElementById('contenedorCargas');
-    if (!contenedor) return cargas;
-    const filas = contenedor.children;
-    for (let fila of filas) {
-        const id = fila.id.split('_')[1];
-        const tipo = document.getElementById(`tipo_${id}`).value;
-        const val1 = parseFloat(document.getElementById(`val1_${id}`).value) || 0;
-        const val2 = parseFloat(document.getElementById(`val2_${id}`).value) || 0;
-        const pos = parseFloat(document.getElementById(`pos_${id}`).value) || 0;
-        const longitudCarga = parseFloat(document.getElementById(`long_${id}`).value) || 0;
-        const ang = tipo === "puntual" ? (parseFloat(document.getElementById(`ang_${id}`).value) ?? 90) : 90;
-
-        if (pos >= 0 && pos <= L_total) {
-            cargas.push({ tipo, val1, val2, pos, long: longitudCarga, ang });
-        }
-    }
-    return cargas;
+p {
+    font-size: 1.1rem;
+    color: #94a3b8;
+    margin-bottom: 2rem;
 }
 
-function corregirSignos(texto) {
-    return texto
-        .replace(/\+\s\-/g, "- ")
-        .replace(/\-\s\-/g, "+ ")
-        .replace(/\+\s\+/g, "+ ")
-        .replace(/^- /, "-")
-        .replace(/\s+/g, ' ');
+/* Gráfico de progreso */
+.chart-container {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    margin-bottom: 2rem;
 }
 
-function calcularTodo() {
-    if (!document.body.classList.contains('page-vigas')) return;
-
-    const tipoViga = document.getElementById('tipoViga').value;
-    const L = parseFloat(document.getElementById('longitud').value) || 0.1;
-    const variable = document.getElementById('variable').value || 'x';
-    const tieneVol = document.getElementById('tieneVoladizo').value === "si" && tipoViga === "biapoyada";
-    const L_vol = tieneVol ? (parseFloat(document.getElementById('longVoladizo').value) || 0) : 0;
-    const L_total = L + L_vol;
-
-    const cargas = obtenerCargas(L_total);
-
-    dibujarEsquemaViga(L, L_total, tipoViga, cargas);
-
-    let Ra = 0, Rb = 0, Ma = 0, Mb = 0;
-    let Rax = 0, Rbx = 0;
-
-    cargas.forEach(c => {
-        if (c.tipo === "puntual") {
-            let angRad = c.ang * Math.PI / 180;
-            let Px = c.val1 * Math.cos(angRad);
-            
-            if (tipoViga === "empotrada_doble") {
-                let a = c.pos; let b = L - c.pos;
-                Rax -= Px * (b / L); Rbx -= Px * (a / L);
-            } else {
-                Rax -= Px;
-            }
-        }
-    });
-
-    if (tipoViga === "biapoyada") {
-        let sumM_A = 0; let sumF = 0;
-        cargas.forEach(c => {
-            let Py = c.tipo === "puntual" ? c.val1 * Math.sin(c.ang * Math.PI / 180) : 0;
-            if (c.tipo === "puntual") { sumM_A += Py * c.pos; sumF += Py; }
-            else if (c.tipo === "uniforme") { let F = c.val1 * c.long; sumM_A += F * (c.pos + c.long / 2); sumF += F; }
-            else if (c.tipo === "triangular") {
-                let q_min = Math.min(c.val1, c.val2); let q_delta = Math.abs(c.val1 - c.val2);
-                let F_r = q_min * c.long; sumM_A += F_r * (c.pos + c.long/2); sumF += F_r;
-                let F_t = 0.5 * q_delta * c.long; let x_t = (c.val1 > c.val2) ? (c.pos + c.long / 3) : (c.pos + 2 * c.long / 3);
-                sumM_A += F_t * x_t; sumF += F_t;
-            }
-        });
-        Rb = sumM_A / L; Ra = sumF - Rb;
-    } else if (tipoViga === "empotrada_doble") {
-        cargas.forEach(c => {
-            let Py = c.tipo === "puntual" ? c.val1 * Math.sin(c.ang * Math.PI / 180) : 0;
-            if (c.tipo === "puntual" && c.pos <= L) {
-                let a = c.pos, b = L - c.pos;
-                Ra += (Py * b * b * (3 * a + b)) / (L**3); Rb += (Py * a * a * (3 * b + a)) / (L**3);
-                Ma += (Py * a * b * b) / (L**2); Mb += (Py * a * a * b) / (L**2);
-            } else if (c.tipo === "uniforme" || c.tipo === "triangular") {
-                for (let x = c.pos; x <= Math.min(c.pos + c.long, L); x += 0.01) {
-                    let q_local = c.tipo === "uniforme" ? c.val1 : c.val1 + (c.val2 - c.val1) * ((x - c.pos) / c.long);
-                    let dq = q_local * 0.01; let a = x, b = L - x;
-                    Ra += (dq * b * b * (3 * a + b)) / (L**3); Rb += (dq * a * a * (3 * b + a)) / (L**3);
-                    Ma += (dq * a * b * b) / (L**2); Mb += (dq * a * a * b) / (L**2);
-                }
-            }
-        });
-    } else if (tipoViga === "empotrada_libre") {
-        cargas.forEach(c => {
-            let Py = c.tipo === "puntual" ? c.val1 * Math.sin(c.ang * Math.PI / 180) : 0;
-            if (c.tipo === "puntual" && c.pos <= L) {
-                Ra += Py; Ma += Py * c.pos;
-            } else if (c.tipo === "uniforme" || c.tipo === "triangular") {
-                for (let x = c.pos; x <= Math.min(c.pos + c.long, L); x += 0.01) {
-                    let q_local = c.tipo === "uniforme" ? c.val1 : c.val1 + (c.val2 - c.val1) * ((x - c.pos) / c.long);
-                    let dq = q_local * 0.01; Ra += dq; Ma += dq * x;
-                }
-            }
-        });
-    } else if (tipoViga === "empotrada_apoyada") {
-        cargas.forEach(c => {
-            let Py = c.tipo === "puntual" ? c.val1 * Math.sin(c.ang * Math.PI / 180) : 0;
-            if (c.tipo === "puntual" && c.pos <= L) {
-                let a = c.pos; let rb_i = (Py * a * a * (3 * L - a)) / (2 * L**3);
-                Rb += rb_i; Ra += Py - rb_i; Ma += Py * a - rb_i * L;
-            } else if (c.tipo === "uniforme" || c.tipo === "triangular") {
-                for (let x = c.pos; x <= Math.min(c.pos + c.long, L); x += 0.01) {
-                    let q_local = c.tipo === "uniforme" ? c.val1 : c.val1 + (c.val2 - c.val1) * ((x - c.pos) / c.long);
-                    let dq = q_local * 0.01; let a = x;
-                    let rb_i = (dq * a * a * (3 * L - a)) / (2 * L**3);
-                    Rb += rb_i; Ra += dq - rb_i; Ma += dq * a - rb_i * L;
-                }
-            }
-        });
-    }
-
-    let textoReacciones = `R_Ay = ${Ra.toFixed(2)} kN | R_Ax = ${Rax.toFixed(2)} kN`;
-    if (tipoViga === "biapoyada") textoReacciones += ` || R_By = ${Rb.toFixed(2)} kN | R_Bx = 0.00 kN`;
-    if (tipoViga === "empotrada_doble") textoReacciones += ` || R_By = ${Rb.toFixed(2)} kN | R_Bx = ${Rbx.toFixed(2)} kN <br> M_A = -${Ma.toFixed(2)} kN·m | M_B = ${Mb.toFixed(2)} kN·m`;
-    if (tipoViga === "empotrada_libre") textoReacciones += `<br> M_A = -${Ma.toFixed(2)} kN·m || (Extremo B Libre)`;
-    if (tipoViga === "empotrada_apoyada") textoReacciones += ` || R_By = ${Rb.toFixed(2)} kN <br> M_A = -${Ma.toFixed(2)} kN·m`;
-    document.getElementById('reacciones').innerHTML = textoReacciones;
-
-    let cortes = [0, L_total];
-    cargas.forEach(c => { cortes.push(c.pos); if (c.tipo !== "puntual") cortes.push(c.pos + c.long); });
-    if (tipoViga === "biapoyada" && tieneVol) cortes.push(L);
-    cortes = cortes.filter(v => v >= 0 && v <= L_total);
-    cortes = [...new Set(cortes.map(v => Number(v.toFixed(3))))].sort((a, b) => a - b);
-
-    const listaTramosHTML = document.getElementById('listaTramos');
-    listaTramosHTML.innerHTML = "";
-
-    for (let i = 0; i < cortes.length - 1; i++) {
-        let x0 = cortes[i], x1 = cortes[i+1];
-        if (Math.abs(x1 - x0) < 0.01) continue;
-
-        let eqN_str = `${(-Rax).toFixed(2)}`; let eqV_str = `${Ra.toFixed(2)}`; let eqM_str = `${(-Ma).toFixed(2)} + ${Ra.toFixed(2)}*${variable}`;
-
-        if (tipoViga === "biapoyada" && tieneVol && x0 >= L) {
-            eqV_str += ` + ${Rb.toFixed(2)}`; eqM_str += ` + ${Rb.toFixed(2)}*(${variable} - ${L.toFixed(2)})`;
-        }
-
-        cargas.forEach(c => {
-            if (x0 >= c.pos) {
-                let angRad = c.ang * Math.PI / 180; let Px = c.val1 * Math.cos(angRad); let Py = c.val1 * Math.sin(angRad);
-                if (c.tipo === "puntual") {
-                    eqN_str += ` - ${Px.toFixed(2)}`; eqV_str += ` - ${Py.toFixed(2)}`; eqM_str += ` - ${Py.toFixed(2)}*(${variable} - ${c.pos.toFixed(2)})`;
-                } else if (c.tipo === "uniforme" && x0 >= c.pos + c.long) {
-                    let F = c.val1 * c.long; let centro = c.pos + c.long/2;
-                    eqV_str += ` - ${F.toFixed(2)}`; eqM_str += ` - ${F.toFixed(2)}*(${variable} - ${centro.toFixed(2)})`;
-                } else if (c.tipo === "uniforme" && x0 < c.pos + c.long) {
-                    eqV_str += ` - ${c.val1.toFixed(2)}*(${variable} - ${c.pos.toFixed(2)})`; eqM_str += ` - 0.5*${c.val1.toFixed(2)}*(${variable} - ${c.pos.toFixed(2)})^2`;
-                } else if (c.tipo === "triangular" && x0 >= c.pos + c.long) {
-                    let F_eq = 0.5 * (c.val1 + c.val2) * c.long; let x_cen = c.pos + ((c.val1 + 2*c.val2) / (c.val1 + c.val2)) * (c.long / 3);
-                    eqV_str += ` - ${F_eq.toFixed(2)}`; eqM_str += ` - ${F_eq.toFixed(2)}*(${variable} - ${x_cen.toFixed(2)})`;
-                } else if (c.tipo === "triangular" && x0 < c.pos + c.long) {
-                    eqV_str += ` - [V_dist(${variable})]`; eqM_str += ` - [M_dist(${variable})]`;
-                }
-            }
-        });
-
-        const div = document.createElement('div'); div.className = 'tramo-box';
-        div.innerHTML = `
-            <div class="rango">Tramo ${i+1}: Para ${x0.toFixed(2)} ≤ ${variable} ≤ ${x1.toFixed(2)} m</div>
-            <div class="ecuacion">N(${variable}) = ${corregirSignos(eqN_str)}</div>
-            <div class="ecuacion">V(${variable}) = ${corregirSignos(eqV_str)}</div>
-            <div class="ecuacion">M(${variable}) = ${corregirSignos(eqM_str)}</div>
-        `;
-        listaTramosHTML.appendChild(div);
-    }
-
-    let puntosX = []; let datosN = []; let datosV = []; let datosM = [];
-    const pasos = 150; const deltaX = L_total / pasos;
-
-    for (let k = 0; k <= pasos; k++) {
-        let x = k * deltaX; if (x > L_total) x = L_total; puntosX.push(x.toFixed(2));
-        let N_x = -Rax; let V_x = Ra; let M_x = -Ma + Ra * x;
-        if (tipoViga === "biapoyada" && tieneVol && x >= L) { V_x += Rb; M_x += Rb * (x - L); }
-
-        cargas.forEach(c => {
-            if (x > c.pos) {
-                let angRad = c.ang * Math.PI / 180; let Px = c.val1 * Math.cos(angRad); let Py = c.val1 * Math.sin(angRad);
-                if (c.tipo === "puntual") { N_x -= Px; V_x -= Py; M_x -= Py * (x - c.pos); }
-                else if (c.tipo === "uniforme") {
-                    let L_act = Math.min(x, c.pos + c.long) - c.pos; let eqF = c.val1 * L_act;
-                    V_x -= eqF; M_x -= eqF * (x - (c.pos + L_act / 2));
-                } else if (c.tipo === "triangular") {
-                    let L_act = Math.min(x, c.pos + c.long) - c.pos;
-                    let q_corte = c.val1 + (c.val2 - c.val1) * (L_act / c.long);
-                    let eqF = 0.5 * (c.val1 + q_corte) * L_act;
-                    let centroide = ((c.val1 + 2 * q_corte) / (c.val1 + q_corte)) * (L_act / 3);
-                    V_x -= eqF; M_x -= eqF * (x - (c.pos + centroide));
-                }
-            }
-        });
-        datosN.push(N_x); datosV.push(V_x); datosM.push(M_x);
-    }
-    dibujarGraficas(puntosX, datosN, datosV, datosM);
+.chart-title {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-function dibujarEsquemaViga(L, L_total, tipoViga, cargas) {
-    const canvas = document.getElementById('canvasViga'); if (!canvas) return;
-    const ctx = canvas.getContext('2d'); canvas.width = canvas.parentElement.clientWidth - 50; 
-    const w = canvas.width; const h = canvas.height; ctx.clearRect(0, 0, w, h);
-
-    const padX = 40; const padY = h / 2 + 20; const drawW = w - 2 * padX; const scale = drawW / (L_total || 1);
-    ctx.fillStyle = '#cbd5e1'; ctx.fillRect(padX, padY - 6, drawW, 12);
-
-    ctx.fillStyle = '#1e3a8a';
-    if (tipoViga === 'biapoyada') {
-        ctx.beginPath(); ctx.moveTo(padX, padY + 6); ctx.lineTo(padX - 10, padY + 25); ctx.lineTo(padX + 10, padY + 25); ctx.fill();
-        let xB = padX + L * scale;
-        ctx.beginPath(); ctx.moveTo(xB, padY + 6); ctx.lineTo(xB - 10, padY + 23); ctx.lineTo(xB + 10, padY + 23); ctx.fill(); 
-        ctx.fillRect(xB - 10, padY + 25, 20, 2);
-    } else if (tipoViga === 'empotrada_doble') {
-        ctx.fillRect(padX - 15, padY - 25, 15, 50); ctx.fillRect(padX + L * scale, padY - 25, 15, 50);
-    } else if (tipoViga === 'empotrada_libre') {
-        ctx.fillRect(padX - 15, padY - 25, 15, 50);
-    } else if (tipoViga === 'empotrada_apoyada') {
-        ctx.fillRect(padX - 15, padY - 25, 15, 50); let xB = padX + L * scale;
-        ctx.beginPath(); ctx.moveTo(xB, padY + 6); ctx.lineTo(xB - 10, padY + 25); ctx.lineTo(xB + 10, padY + 25); ctx.fill();
-    }
-
-    ctx.fillStyle = '#dc2626'; ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
-    cargas.forEach(c => {
-        let xPx = padX + c.pos * scale;
-        if (c.tipo === 'puntual') {
-            let rad = c.ang * Math.PI / 180; let fX = xPx - 40 * Math.cos(rad); let fY = (padY - 8) - 40 * Math.sin(rad);
-            dibujarFlecha(ctx, fX, fY, xPx, padY - 8);
-            ctx.font = "11px Arial"; ctx.fillText(`${c.val1}kN (${c.ang}°)`, fX - 15, fY - 5);
-        } else if (c.tipo === 'uniforme' || c.tipo === 'triangular') {
-            let wLoad = c.long * scale; ctx.fillStyle = 'rgba(220, 38, 38, 0.15)';
-            if (c.tipo === 'uniforme') {
-                ctx.fillRect(xPx, padY - 35, wLoad, 25);
-                for(let i=0; i<=wLoad; i+=30) dibujarFlecha(ctx, xPx + i, padY - 35, xPx + i, padY - 8);
-                ctx.fillStyle = '#dc2626'; ctx.fillText(c.val1 + 'kN/m', xPx + wLoad/2 - 20, padY - 40);
-            } else {
-                ctx.beginPath(); let h1 = c.val1 >= c.val2 ? 30 : 5; let h2 = c.val2 > c.val1 ? 30 : 5;
-                ctx.moveTo(xPx, padY - 8); ctx.lineTo(xPx, padY - 8 - h1); ctx.lineTo(xPx + wLoad, padY - 8 - h2); ctx.lineTo(xPx + wLoad, padY - 8); ctx.fill();
-                ctx.fillStyle = '#dc2626'; ctx.fillText('Triang.', xPx + wLoad/2 - 15, padY - 40);
-            }
-        }
-    });
+.graph {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 150px;
 }
 
-function dibujarFlecha(ctx, fromX, fromY, toX, toY) {
-    const headlen = 8; const angle = Math.atan2(toY - fromY, toX - fromX);
-    ctx.beginPath(); ctx.moveTo(fromX, fromY); ctx.lineTo(toX, toY);
-    ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
-    ctx.moveTo(toX, toY);
-    ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
-    ctx.stroke();
+.bar {
+    width: 45px;
+    background: linear-gradient(to top, #0284c7, #38bdf8);
+    border-radius: 6px 6px 0 0;
+    position: relative;
+    height: 0;
+    transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-function dibujarGraficas(labels, datosN, datosV, datosM) {
-    if (chartN) chartN.destroy(); if (chartV) chartV.destroy(); if (chartM) chartM.destroy();
-    
-    const cN = document.getElementById('chartAxial'); if (!cN) return;
-    chartN = new Chart(cN.getContext('2d'), {
-        type: 'line',
-        data: { labels: labels, datasets: [{ label: 'Esfuerzo Axial N (kN)', data: datosN, borderColor: '#2563eb', backgroundColor: 'rgba(37, 99, 235, 0.08)', fill: true, borderWidth: 2, pointRadius: 0, tension: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
+.bar::after {
+    content: attr(data-value);
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.85rem;
+    color: #38bdf8;
+    font-weight: bold;
+}
 
-    const cV = document.getElementById('chartCortante'); if (!cV) return;
-    chartV = new Chart(cV.getContext('2d'), {
-        type: 'line',
-        data: { labels: labels, datasets: [{ label: 'Cortante V (kN)', data: datosV, borderColor: '#dc2626', backgroundColor: 'rgba(220, 38, 38, 0.08)', fill: true, borderWidth: 2, pointRadius: 0, tension: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
+.separator {
+    border: 0;
+    height: 1px;
+    background: #334155;
+    margin: 2.5rem 0;
+}
 
-    const cM = document.getElementById('chartFlector'); if (!cM) return;
-    chartM = new Chart(cM.getContext('2d'), {
-        type: 'line',
-        data: { labels: labels, datasets: [{ label: 'Momento M (kN·m)', data: datosM, borderColor: '#16a34a', backgroundColor: 'rgba(22, 163, 74, 0.08)', fill: true, borderWidth: 2, pointRadius: 0, tension: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { reverse: true } } }
-    });
+/* Botones */
+.btn-main, .btn-tema {
+    display: inline-block;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s, transform 0.1s;
+    text-decoration: none;
+}
+
+.btn-main {
+    background-color: #38bdf8;
+    color: #0f172a;
+}
+.btn-main:hover {
+    background-color: #0ea5e9;
+}
+
+.temas-container {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-tema {
+    background-color: #1e293b;
+    color: #38bdf8;
+    border: 1px solid #334155;
+}
+.btn-tema:hover {
+    background-color: #334155;
+    transform: translateY(-2px);
+}
+
+.hidden {
+    display: none;
+}
+
+#hidden-message {
+margin-top: 1.5rem;
+color: #34d399;
+font-weight: 500;
 }

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelador de Bloques y Criterio de Routh - Regulación Automática</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --bg: #ecf0f1;
+            --panel-bg: #fff;
+            --border: #bdc3c7;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; padding: 0; background-color: var(--bg); display: flex; flex-direction: column; height: 100vh; }
+
+        header { background-color: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        header h1 { margin: 0; font-size: 1.5rem; }
+
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+
+        /* Paleta de componentes */
+        .sidebar { width: 260px; background-color: var(--panel-bg); border-right: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .sidebar h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 5px; font-size: 1.1rem; }
+
+        .comp-group { display: flex; flex-direction: column; gap: 8px; }
+        .draggable-item { background: #f8f9fa; border: 2px dashed var(--border); padding: 10px; border-radius: 6px; cursor: grab; text-align: center; font-weight: bold; transition: all 0.2s; font-size: 0.9rem; user-select: none; }
+        .draggable-item:hover { border-color: var(--accent); background: #e8f4f8; color: var(--accent); }
+
+        /* Lienzo de Trabajo */
+        .canvas-area { flex: 1; position: relative; background-color: #fafafa; background-image: radial-gradient(#dfdfdf 1px, transparent 1px); background-size: 20px 20px; overflow: auto; min-width: 500px; }
+
+        /* Bloques en el lienzo */
+        .block-element { position: absolute; background: white; border: 2px solid var(--primary); border-radius: 4px; min-width: 110px; padding: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: move; display: flex; flex-direction: column; align-items: center; justify-content: center; user-select: none; z-index: 10; }
+        .block-element.comparator { border-radius: 50%; min-width: 45px; max-width: 45px; height: 45px; padding: 0; font-size: 1.2rem; font-weight: bold; background: #fff3cd; border-color: #f39c12; }
+        .block-element h4 { margin: 0 0 5px 0; font-size: 0.85rem; color: #7f8c8d; width: 100%; text-align: center; }
+        .block-element input { width: 85px; text-align: center; border: 1px solid var(--border); border-radius: 3px; font-size: 0.9rem; padding: 2px; font-family: monospace; }
+        .block-element .signs-select { font-size: 0.75rem; margin-top: 2px; }
+
+        /* Bornes de conexión */
+        .endpoint { position: absolute; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; cursor: crosshair; z-index: 20; }
+        .endpoint.in { left: -6px; top: calc(50% - 5px); background: var(--danger); }
+        .endpoint.out { right: -6px; top: calc(50% - 5px); background: var(--success); }
+        .comparator .endpoint.in-bottom { bottom: -6px; left: calc(50% - 5px); background: var(--danger); }
+
+        .block-element.feedback-block .endpoint.in { right: -6px; left: auto; background: var(--danger); }
+        .block-element.feedback-block .endpoint.out { left: -6px; right: auto; background: var(--success); }
+
+        .delete-btn { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; display: none; z-index: 30; }
+        .block-element:hover .delete-btn { display: flex; }
+
+        /* Panel Derecho */
+        .results-panel { width: 360px; background-color: var(--panel-bg); border-left: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .results-panel h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid var(--success); padding-bottom: 5px; font-size: 1.1rem; }
+
+        .math-box { background: #f8f9fa; border-left: 5px solid var(--accent); padding: 12px; border-radius: 4px; font-family: 'Times New Roman', Times, serif; font-size: 1.1rem; min-height: 70px; display: flex; align-items: center; justify-content: center; overflow-x: auto; }
+
+        /* Estilos de la tabla de Routh */
+        .routh-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
+        .routh-table th, .routh-table td { padding: 6px 10px; border: 1px solid var(--border); text-align: center; }
+        .routh-table th { background-color: var(--primary); color: white; }
+        .routh-table tr td:first-child { font-weight: bold; background-color: #f8f9fa; width: 50px; }
+        .first-col-highlight { background-color: #e8f4f8; font-weight: bold; color: var(--primary); }
+
+        .status-badge { padding: 8px; border-radius: 4px; font-weight: bold; text-align: center; margin-top: 10px; }
+        .status-badge.stable { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-badge.unstable { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* SVG de Cables */
+        #svg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 5; }
+        .wire { cursor: pointer; pointer-events: stroke; }
+
+        button.action-btn { background-color: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; }
+        button.action-btn:hover { background-color: #2980b9; }
+        button.clear-btn { background-color: var(--danger); margin-top: auto; }
+        .btn-volver {
+            background-color: #475569;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-volver:hover {
+    background-color: #334155;
+}
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Modelador de Sistemas y Análisis de Estabilidad de Routh</h1>
+
+
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+       <button class="btn-volver" onclick="window.location.href='../../index.html'">← Volver al Índice</button>
+    </div>
+</header>
+
+
+
+
+
+
+
+
+
+<div class="main-container">
+    <div class="sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 style="margin: 0; border: none;">Funciones de transferencia</h2>
+
+    </div>
+
+        <div class="comp-group">
+            <div class="draggable-item" draggable="true" data-type="P" data-val="Kp">Proporcional (P)</div>
+            <div class="draggable-item" draggable="true" data-type="PID" data-val="Kp+Ki/s+Kd·s">PID Completo</div>
+        </div>
+        <h3>Ganancias e H</h3>
+        <div class="comp-group">
+            <div class="draggable-item" draggable="true" data-type="G" data-val="G1">Planta G1(s)</div>
+            <div class="draggable-item" draggable="true" data-type="H" data-val="1">Realimentación 1</div>
+        </div>
+        <h3>Aritmética</h3>
+        <div class="comp-group">
+            <div class="draggable-item" draggable="true" data-type="COMP" data-val="+-">Punto Suma (+ / -)</div>
+        </div>
+        <button class="action-btn clear-btn" onclick="limpiarLienzo()">Limpiar Todo</button>
+    </div>
+
+    <div class="canvas-area" id="drop-canvas">
+        <svg id="svg-canvas"><g id="wires-group"></g></svg>
+        <div id="node-R" class="block-element" style="left: 30px; top: 150px; border-color: #7f8c8d; min-width: 50px; background: #eee;">
+            <strong>R(s)</strong><div class="endpoint out" data-node="R" data-type="out"></div>
+        </div>
+        <div id="node-Y" class="block-element" style="right: 50px; top: 150px; border-color: #7f8c8d; min-width: 50px; background: #eee;">
+            <strong>Y(s)</strong><div class="endpoint in" data-node="Y" data-type="in"></div>
+        </div>
+    </div>
+
+    <div class="results-panel">
+        <div>
+            <h3>Función de Transferencia</h3>
+            <button class="action-btn" onclick="calcularSimplificacion()">Simplificar (Mason)</button>
+            <div class="math-box" id="ft-result" style="margin-top:8px;">
+                <span style="color:#95a5a6; font-style:italic;">Estructura del lazo cerrado</span>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 5px 0;">
+
+        <div>
+            <h3>Criterio de Routh-Hurwitz</h3>
+            <p style="font-size: 0.8rem; color:#7f8c8d; margin: 0 0 8px 0;">Introduce los coeficientes del denominador ordenados de mayor a menor grado separados por comas:</p>
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <input type="text" id="routh-input" value="1, 2, 4, 8" style="flex:1; padding:6px; border:1px solid var(--border); border-radius:4px; font-family:monospace; text-align:center;">
+                <button class="action-btn" style="width:auto; padding:6px 12px; background-color:var(--success);" onclick="calcularRouth()">Analizar</button>
+            </div>
+
+            <div id="routh-table-container"></div>
+            <div id="routh-status"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- LÓGICA DE INTERFAZ GRÁFICA Y DIÁGRAMA DE BLOQUES (MASON INTEGRADO) ---
+    let blockCounter = 0; let connections = []; let currentWireSource = null; let draggedElementData = null; let animationFrameId = null;
+
+    document.querySelectorAll('.draggable-item').forEach(item => {
+        item.addEventListener('dragstart', (e) => {
+            draggedElementData = { type: item.getAttribute('data-type'), val: item.getAttribute('data-val'), label: item.innerText };
+        });
+    });
+
+    const dropCanvas = document.getElementById('drop-canvas');
+    dropCanvas.addEventListener('dragover', (e) => e.preventDefault());
+    dropCanvas.addEventListener('drop', (e) => {
+        e.preventDefault(); if (!draggedElementData) return;
+        const rect = dropCanvas.getBoundingClientRect();
+        crearBloqueEnLienzo(draggedElementData.type, draggedElementData.val, draggedElementData.label, e.clientX - rect.left - 55, e.clientY - rect.top - 25);
+        draggedElementData = null;
+    });
+
+    function crearBloqueEnLienzo(type, val, label, x, y) {
+        blockCounter++; const id = `block_${blockCounter}`; const block = document.createElement('div');
+        block.id = id; block.dataset.type = type;
+        if (type === 'COMP') {
+            block.className = 'block-element comparator'; block.style.left = `${x}px`; block.style.top = `${y}px`;
+            block.innerHTML = `<span class="sign-label" id="label_${id}">+<br>-</span><div class="delete-btn" onclick="eliminarBloque('${id}')">&times;</div><div class="endpoint in" data-node="${id}" data-port="left" data-type="in"></div><div class="endpoint in-bottom" data-node="${id}" data-port="bottom" data-type="in"></div><div class="endpoint out" data-node="${id}" data-type="out"></div><select class="signs-select" style="position:absolute; bottom:-22px; font-size:10px;" onchange="cambiarSignoComp('${id}', this.value)"><option value="+-">+/-</option><option value="++">+/+</option></select>`;
+        } else {
+            block.className = 'block-element' + (type === 'H' ? ' feedback-block' : ''); block.style.left = `${x}px`; block.style.top = `${y}px`;
+            block.innerHTML = `<h4>${label}</h4><input type="text" value="${val}" id="input_${id}" onchange="solicitarActualizacionLineas()"><div class="delete-btn" onclick="eliminarBloque('${id}')">&times;</div><div class="endpoint in" data-node="${id}" data-type="in"></div><div class="endpoint out" data-node="${id}" data-type="out"></div>`;
+        }
+        dropCanvas.appendChild(block); hacerMovible(block); inicializarManejadoresBornes(block); solicitarActualizacionLineas();
+    }
+
+    function cambiarSignoComp(id, val) { document.getElementById(`label_${id}`).innerHTML = val === "+-" ? "+<br>-" : "+<br>+"; solicitarActualizacionLineas(); }
+    function hacerMovible(el) {
+        let posX = 0, posY = 0, mouseX = 0, mouseY = 0;
+        el.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('endpoint') || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            e.preventDefault(); mouseX = e.clientX; mouseY = e.clientY;
+            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; solicitarActualizacionLineas(); };
+            document.onmousemove = (ev) => {
+                posX = mouseX - ev.clientX; posY = mouseY - ev.clientY; mouseX = ev.clientX; mouseY = ev.clientY;
+                el.style.top = (el.offsetTop - posY) + "px"; el.style.left = (el.offsetLeft - posX) + "px"; solicitarActualizacionLineas();
+            };
+        });
+    }
+
+    function inicializarManejadoresBornes(block) {
+        block.querySelectorAll('.endpoint').forEach(ep => {
+            if (ep.dataset.type === 'out') {
+                ep.addEventListener('mousedown', (e) => {
+                    e.stopPropagation(); e.preventDefault(); currentWireSource = { node: ep.dataset.node, element: ep };
+                    document.addEventListener('mousemove', dibujarCableProvisional); document.addEventListener('mouseup', terminarConexionCable);
+                });
+            }
+        });
+    }
+    document.getElementById('node-R').querySelector('.endpoint').addEventListener('mousedown', (e) => {
+        e.stopPropagation(); e.preventDefault(); currentWireSource = { node: 'R', element: e.target };
+        document.addEventListener('mousemove', dibujarCableProvisional); document.addEventListener('mouseup', terminarConexionCable);
+    });
+
+    function calcularPathCurvo(x1, y1, x2, y2, sourceEl, targetEl, portDestino) {
+        const srcBlock = sourceEl.closest('.block-element'); const tgtBlock = targetEl ? targetEl.closest('.block-element') : null;
+        if (srcBlock && srcBlock.classList.contains('feedback-block')) return `M ${x1} ${y1} C ${x1 - 50} ${y1}, ${portDestino === 'bottom' ? x2 : x2 + 50} ${portDestino === 'bottom' ? y2 + 50 : y2}, ${x2} ${y2}`;
+        if (tgtBlock && tgtBlock.classList.contains('feedback-block') && portDestino === 'left') return `M ${x1} ${y1} C ${x1 + 50} ${y1}, ${x2 + 60} ${y2}, ${x2} ${y2}`;
+        if (portDestino === 'bottom') return `M ${x1} ${y1} C ${x1 + (x2 - x1) * 0.5} ${y1}, ${x2} ${y2 + 60}, ${x2} ${y2}`;
+        return `M ${x1} ${y1} C ${x1 + (x2 - x1) * 0.5} ${y1}, ${x1 + (x2 - x1) * 0.5} ${y2}, ${x2} ${y2}`;
+    }
+
+    function dibujarCableProvisional(e) {
+        if (!currentWireSource) return;
+        const svg = document.getElementById('svg-canvas'); const rect = svg.getBoundingClientRect();
+        const srcRect = currentWireSource.element.getBoundingClientRect();
+        let path = document.getElementById('temp-wire') || document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        if (!path.id) { path.id = 'temp-wire'; svg.appendChild(path); }
+        path.setAttribute('stroke', '#2c3e50'); path.setAttribute('stroke-width', '3'); path.setAttribute('fill', 'none');
+        path.setAttribute('d', calcularPathCurvo(srcRect.left - rect.left + 5, srcRect.top - rect.top + 5, e.clientX - rect.left, e.clientY - rect.top, currentWireSource.element, null, 'left'));
+    }
+
+    function terminarConexionCable(e) {
+        document.removeEventListener('mousemove', dibujarCableProvisional); document.removeEventListener('mouseup', terminarConexionCable);
+        const tempWire = document.getElementById('temp-wire'); if (tempWire) tempWire.remove();
+        const target = e.target;
+        if (target && target.classList.contains('endpoint') && target.dataset.type === 'in') {
+            const destNode = target.dataset.node; const port = target.dataset.port || 'left';
+            if (!connections.some(c => c.from === currentWireSource.node && c.to === destNode && c.port === port) && currentWireSource.node !== destNode) {
+                connections.push({ id: `wire_${Date.now()}`, from: currentWireSource.node, to: destNode, port: port, sourceEl: currentWireSource.element, targetEl: target });
+            }
+        }
+        currentWireSource = null; solicitarActualizacionLineas();
+    }
+
+    function solicitarActualizacionLineas() { if (animationFrameId) cancelAnimationFrame(animationFrameId); animationFrameId = requestAnimationFrame(actualizarLineasEfectivo); }
+    function actualizarLineasEfectivo() {
+        const group = document.getElementById('wires-group'); if (!group) return; group.innerHTML = '';
+        const svg = document.getElementById('svg-canvas'); const rect = svg.getBoundingClientRect();
+        connections.forEach(c => {
+            const fR = c.sourceEl.getBoundingClientRect(); const tR = c.targetEl.getBoundingClientRect();
+            const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            p.setAttribute('d', calcularPathCurvo(fR.left - rect.left + 5, fR.top - rect.top + 5, tR.left - rect.left + 2, tR.top - rect.top + 5, c.sourceEl, c.targetEl, c.port));
+            p.setAttribute('fill', 'none'); p.setAttribute('stroke', '#2c3e50'); p.setAttribute('stroke-width', '3');
+            p.addEventListener('dblclick', () => { connections = connections.filter(w => w.id !== c.id); solicitarActualizacionLineas(); });
+            group.appendChild(p);
+        });
+    }
+
+    function eliminarBloque(id) { connections = connections.filter(c => c.from !== id && c.to !== id); const el = document.getElementById(id); if (el) el.remove(); solicitarActualizacionLineas(); }
+    function limpiarLienzo() { connections = []; document.querySelectorAll('.block-element').forEach(el => { if (el.id !== 'node-R' && el.id !== 'node-Y') el.remove(); }); document.getElementById('ft-result').innerHTML = ''; solicitarActualizacionLineas(); }
+
+    function calcularSimplificacion() {
+        let nodes = ['R', 'Y']; document.querySelectorAll('.block-element').forEach(el => { if(el.id !== 'node-R' && el.id !== 'node-Y') nodes.push(el.id); });
+        let grafo = {}; nodes.forEach(n => grafo[n] = []);
+        connections.forEach(c => {
+            let gain = (c.from==='R'||c.from==='Y') ? "1" : (document.getElementById(`input_${c.from}`) ? document.getElementById(`input_${c.from}`).value : "1");
+            let sign = "+"; if(document.getElementById(c.to)?.classList.contains('comparator') && c.port==='bottom') { sign = document.getElementById(c.to).querySelector('.signs-select').value === "++" ? "+" : "-"; }
+            grafo[c.from].push({ to: c.to, gain: gain, sign: sign });
+        });
+        let caminos = [];
+        function dfsCaminos(act, path, g, s) {
+            if(act === 'Y') { caminos.push({ gain: g, sign: s }); return; }
+            (grafo[act]||[]).forEach(e => { if(!path.includes(e.to)) { path.push(e.to); dfsCaminos(e.to, path, g==="1"?e.gain:`${g}·${e.gain}`, s===e.sign?"+":"-"); path.pop(); } });
+        }
+        dfsCaminos('R', ['R'], "1", "+");
+        let lazos = []; let lazosClaves = new Set();
+        function dfsLazos(ini, act, path, g, s) {
+            (grafo[act]||[]).forEach(e => {
+                if(e.to === ini) {
+                    let key = [...path].sort().join(",");
+                    if(!lazosClaves.has(key)) { lazosClaves.add(key); lazos.push({ gain: g==="1"?e.gain:`${g}·${e.gain}`, sign: s===e.sign?"+":"-" }); }
+                } else if(!path.includes(e.to) && e.to!=='R' && e.to!=='Y') { path.push(e.to); dfsLazos(ini, e.to, path, g==="1"?e.gain:`${g}·${e.gain}`, s===e.sign?"+":"-"); path.pop(); }
+            });
+        }
+        nodes.forEach(n => { if(n!=='R' && n!=='Y') dfsLazos(n, n, [n], "1", "+"); });
+        if(caminos.length === 0) { document.getElementById('ft-result').innerHTML = "<span style='color:red;'>Lazo abierto</span>"; return; }
+
+        let num = caminos.map(c => (c.sign==="-"?"-":"")+c.gain).join("+").replace(/·1/g,'');
+        let den = lazos.map(l => (l.sign==="-"?"+":"-")+" "+l.gain).join(" ").replace(/·1/g,'');
+        document.getElementById('ft-result').innerHTML = `<div style="display:flex; flex-direction:column; align-items:center;"><strong>M(s) =</strong><span style="border-bottom:2px solid; padding:0 10px;">${num}</span><span>1 ${den||""}</span></div>`;
+    }
+
+    // =========================================================================
+    //  NUEVO MÓDULO: ALGORITMO Y CONSTRUCCIÓN DE LA TABLA DE ROUTH-HURWITZ
+    // =========================================================================
+    function calcularRouth() {
+        const inputVal = document.getElementById('routh-input').value;
+        // Parsear y limpiar los coeficientes numéricos
+        let coeffs = inputVal.split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x));
+
+        if (coeffs.length === 0) {
+            document.getElementById('routh-table-container').innerHTML = "<span style='color:var(--danger);'>Error: Introduce coeficientes válidos.</span>";
+            return;
+        }
+
+        const n = coeffs.length - 1; // Grado del polinomio
+        let numColumnas = Math.ceil((n + 1) / 2);
+
+        // Inicializar la matriz de Routh
+        let routh = [];
+        for (let i = 0; i <= n; i++) {
+            routh.push(new Array(numColumnas).fill(0));
+        }
+
+        // Rellenar las dos primeras filas con los coeficientes dados
+        let idxCoeff = 0;
+        for (let j = 0; j < numColumnas; j++) {
+            if (idxCoeff < coeffs.length) routh[0][j] = coeffs[idxCoeff++];
+            if (idxCoeff < coeffs.length) routh[1][j] = coeffs[idxCoeff++];
+        }
+
+        // Calcular numéricamente el resto de la tabla de Routh
+        for (let i = 2; i <= n; i++) {
+            for (let j = 0; j < numColumnas - 1; j++) {
+                let a1 = routh[i-1][0];
+                let a2 = routh[i-2][0];
+                let b1 = routh[i-1][j+1];
+                let b2 = routh[i-2][j+1];
+
+                // Evitar división por cero estricta mediante épsilon aproximado (Caso especial de Routh)
+                if (Math.abs(a1) < 1e-5) {
+                    a1 = 0.001;
+                }
+
+                // Aplicar determinante cruzado negativo de Routh: (a1*b2 - a2*b1) / a1
+                routh[i][j] = ((a1 * b2) - (a2 * b1)) / a1;
+            }
+            routh[i][numColumnas-1] = 0; // El último elemento de arrastre siempre se pone a 0
+        }
+
+        // Renderizar la tabla generada en formato HTML limpio
+        let htmlTabla = `<table class="routh-table"><thead><tr><th>Sistemas</th><th>Col. 1</th>`;
+        for (let j = 1; j < numColumnas; j++) {
+            htmlTabla += `<th>Col. ${j+1}</th>`;
+        }
+        htmlTabla += `</tr></thead><tbody>`;
+
+        for (let i = 0; i <= n; i++) {
+            let gradoS = n - i;
+            htmlTabla += `<tr><td>s<sup>${gradoS}</sup></td>`;
+            for (let j = 0; j < numColumnas; j++) {
+                let val = routh[i][j];
+                // Formatear los decimales para que queden limpios a la vista
+                let valFormateado = Math.abs(val) < 1e-4 ? "0" : val.toFixed(2);
+                let clasePrimeraColumna = (j === 0) ? 'class="first-col-highlight"' : '';
+                htmlTabla += `<td ${clasePrimeraColumna}>${valFormateado}</td>`;
+            }
+            htmlTabla += `</tr>`;
+        }
+        htmlTabla += `</tbody></table>`;
+        document.getElementById('routh-table-container').innerHTML = htmlTabla;
+
+        // Analizar estabilidad contando cambios de signo en la primera columna
+        let cambiosSigno = 0;
+        for (let i = 0; i < n; i++) {
+            let valActual = routh[i][0];
+            let valSiguiente = routh[i+1][0];
+
+            // Si cambian de signo (+ a - o viceversa)
+            if ((valActual > 0 && valSiguiente < 0) || (valActual < 0 && valSiguiente > 0)) {
+                cambiosSigno++;
+            }
+        }
+
+        // Mostrar dictamen de estabilidad
+        const statusBox = document.getElementById('routh-status');
+        if (cambiosSigno === 0) {
+            statusBox.className = "status-badge stable";
+            statusBox.innerHTML = `✓ Sistema Estable<br><span style="font-size:0.85rem; font-weight:normal;">0 polos en el semiplano derecho (RHP).</span>`;
+        } else {
+            statusBox.className = "status-badge unstable";
+            statusBox.innerHTML = `✗ Sistema Inestable<br><span style="font-size:0.85rem; font-weight:normal;">${cambiosSigno} cambio(s) de signo detectado(s). Tiene ${cambiosSigno} polo(s) en el semiplano derecho (RHP).</span>`;
+        }
+    }
+
+    window.onload = function() {
+        crearBloqueEnLienzo("COMP", "+-", "Punto Suma", 120, 150);
+        crearBloqueEnLienzo("G", "G1", "Planta G1(s)", 230, 142);
+        crearBloqueEnLienzo("H", "1", "Realimentación", 180, 250);
+        calcularRouth(); // Inicializa la tabla de ejemplo por defecto
+    };
+</script>
+</body>
+</html>
