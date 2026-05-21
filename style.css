@@ -1,4 +1,6 @@
-/* Reset global */
+/* ==========================================
+   ESTILOS GENERALES Y DEL INDEX PRINCIPAL
+   ========================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -35,7 +37,7 @@ p {
     margin-bottom: 2rem;
 }
 
-/* Gráfico de barras */
+/* Gráfico de barras del Index */
 .chart-container {
     background: #1e293b;
     padding: 2rem;
@@ -79,7 +81,6 @@ p {
     font-weight: bold;
 }
 
-/* Línea separadora */
 .separator {
     border: 0;
     height: 1px;
@@ -87,8 +88,8 @@ p {
     margin: 2.5rem 0;
 }
 
-/* Botones y Enlaces */
-.btn-main, .btn-tema, .btn-volver {
+/* Botones compartidos */
+.btn-main, .btn-tema, .btn-volver, .page-vigas .btn {
     display: inline-block;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -96,11 +97,10 @@ p {
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
-    text-decoration: none;
+    font-family: inherit;
     transition: background 0.2s, transform 0.1s;
 }
 
-/* Botón interactivo principal */
 .btn-main {
     background-color: #38bdf8;
     color: #0f172a;
@@ -109,7 +109,6 @@ p {
     background-color: #0ea5e9;
 }
 
-/* Contenedor y botones de los temas */
 .temas-container {
     display: flex;
     gap: 12px;
@@ -127,24 +126,152 @@ p {
     transform: translateY(-2px);
 }
 
-/* Botón específico para regresar al índice */
 .btn-volver {
     background-color: #475569;
     color: #f8fafc;
-    margin-top: 2rem;
 }
 .btn-volver:hover {
     background-color: #64748b;
-    transform: translateY(0);
 }
 
-/* Clases de utilidad */
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 #hidden-message {
     margin-top: 1.5rem;
     color: #34d399;
     font-weight: 500;
+}
+
+/* ==========================================
+   ESTILOS EXCLUSIVOS DE LA APLICACIÓN DE VIGAS
+   ========================================== */
+body.page-vigas {
+    display: block;
+    max-width: 950px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f1f5f9;
+    color: #1e293b;
+    text-align: left;
+}
+
+.page-vigas .card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.page-vigas h2, .page-vigas h3 {
+    color: #1e3a8a;
+    margin-top: 0;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+    text-align: left;
+}
+
+.page-vigas .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.page-vigas .group {
+    display: flex;
+    flex-direction: column;
+}
+
+.page-vigas label {
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.page-vigas input, .page-vigas select {
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: #fff;
+    color: #1e293b;
+}
+
+.page-vigas input:focus, .page-vigas select:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+.page-vigas .carga-row {
+    border-left: 4px solid #2563eb;
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.page-vigas .resultados {
+    background: #f8fafc;
+    border-top: 4px solid #1e3a8a;
+}
+
+.page-vigas .tramo-box {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.page-vigas .ecuacion {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 15px;
+    font-weight: bold;
+    color: #0f172a;
+    margin: 6px 0;
+}
+
+.page-vigas .rango {
+    color: #d97706;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.page-vigas .canvas-container {
+    position: relative;
+    margin-top: 20px;
+    height: 260px;
+    width: 100%;
+}
+
+.page-vigas .btn {
+    background: #2563eb;
+    color: white;
+    padding: 10px 15px;
+    font-size: 14px;
+}
+
+.page-vigas .btn:hover {
+    background: #1d4ed8;
+}
+
+.page-vigas .btn-volver {
+    padding: 8px 14px;
+    font-size: 13px;
+    margin-top: 0;
+}
+
+.page-vigas #canvasViga {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    width: 100%;
 }
