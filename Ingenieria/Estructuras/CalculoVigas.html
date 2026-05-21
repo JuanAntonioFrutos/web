@@ -24,12 +24,30 @@
         .btn { background: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; }
         .btn:hover { background: #1d4ed8; }
         #canvasViga { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 10px; width: 100%; }
+        .btn-volver {
+    background-color: #475569;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-volver:hover {
+    background-color: #334155;
+}
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>1. Configuración Geométrica de la Viga</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h2 style="margin: 0; border: none;">1. Configuración Geométrica de la Viga</h2>
+    <button class="btn-volver" onclick="window.location.href='../../../index.html'">← Volver al Índice</button>
+</div>
     <div class="grid">
         <div class="group">
             <label for="tipoViga">Tipo de Apoyo:</label>
@@ -86,7 +104,7 @@
 
 <div class="card">
     <h2>5. Diagramas de Solicitaciones Terrestres (N, V, M)</h2>
-    
+
     <h3>Diagrama de Esfuerzo Axial - N [kN] (+ Tracción / - Compresión)</h3>
     <div class="canvas-container">
         <canvas id="chartAxial"></canvas>
@@ -132,7 +150,7 @@ function toggleVoladizo() {
 function agregarCarga() {
     const contenedor = document.getElementById('contenedorCargas');
     const id = contadorCargas++;
-    
+
     const div = document.createElement('div');
     div.className = 'carga-row';
     div.id = `carga_${id}`;
@@ -252,7 +270,7 @@ function calcularTodo() {
         if (c.tipo === "puntual") {
             let angRad = c.ang * Math.PI / 180;
             let Px = c.val1 * Math.cos(angRad); // Componente axial horizontal
-            
+
             if (tipoViga === "empotrada_doble") {
                 // Barra empotrada en ambos extremos hiperestática en X
                 let a = c.pos;
@@ -406,8 +424,8 @@ function calcularTodo() {
         if (x > L_total) x = L_total;
         puntosX.push(x.toFixed(2));
 
-        let N_x = -Rax; 
-        let V_x = Ra; 
+        let N_x = -Rax;
+        let V_x = Ra;
         let M_x = -Ma + Ra * x;
 
         if (tipoViga === "biapoyada" && tieneVol && x >= L) { V_x += Rb; M_x += Rb * (x - L); }
@@ -418,10 +436,10 @@ function calcularTodo() {
                 let Px = c.val1 * Math.cos(angRad);
                 let Py = c.val1 * Math.sin(angRad);
 
-                if (c.tipo === "puntual") { 
-                    N_x -= Px; 
-                    V_x -= Py; 
-                    M_x -= Py * (x - c.pos); 
+                if (c.tipo === "puntual") {
+                    N_x -= Px;
+                    V_x -= Py;
+                    M_x -= Py * (x - c.pos);
                 }
                 else if (c.tipo === "uniforme") {
                     let L_act = Math.min(x, c.pos + c.long) - c.pos; let eqF = c.val1 * L_act;
@@ -445,7 +463,7 @@ function calcularTodo() {
 function dibujarEsquemaViga(L, L_total, tipoViga, cargas) {
     const canvas = document.getElementById('canvasViga');
     const ctx = canvas.getContext('2d');
-    canvas.width = canvas.parentElement.clientWidth - 50; 
+    canvas.width = canvas.parentElement.clientWidth - 50;
     const w = canvas.width; const h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
@@ -460,7 +478,7 @@ function dibujarEsquemaViga(L, L_total, tipoViga, cargas) {
     if (tipoViga === 'biapoyada') {
         ctx.beginPath(); ctx.moveTo(padX, padY + 6); ctx.lineTo(padX - 10, padY + 25); ctx.lineTo(padX + 10, padY + 25); ctx.fill(); // Fijo A
         let xB = padX + L * scale;
-        ctx.beginPath(); ctx.moveTo(xB, padY + 6); ctx.lineTo(xB - 10, padY + 23); ctx.lineTo(xB + 10, padY + 23); ctx.fill(); 
+        ctx.beginPath(); ctx.moveTo(xB, padY + 6); ctx.lineTo(xB - 10, padY + 23); ctx.lineTo(xB + 10, padY + 23); ctx.fill();
         ctx.fillRect(xB - 10, padY + 25, 20, 2); // Rodillo B
     } else if (tipoViga === 'empotrada_doble') {
         ctx.fillRect(padX - 15, padY - 25, 15, 50);
@@ -511,7 +529,7 @@ function dibujarFlecha(ctx, fromX, fromY, toX, toY) {
 
 function dibujarGraficas(labels, datosN, datosV, datosM) {
     if (chartN) chartN.destroy(); if (chartV) chartV.destroy(); if (chartM) chartM.destroy();
-    
+
     // Gráfica de Axiles (N)
     const ctxN = document.getElementById('chartAxial').getContext('2d');
     chartN = new Chart(ctxN, {
