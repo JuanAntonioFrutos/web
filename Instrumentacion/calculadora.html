@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Científica Compleja Avanzada - Corregida</title>
+    <title>Calculadora Científica, Compleja y Graficadora Avanzada</title>
     <style>
         * {
             box-sizing: border-box;
@@ -28,7 +28,7 @@
             border-radius: 20px;
             box-shadow: 0px 15px 35px rgba(0,0,0,0.5);
             gap: 25px;
-            max-width: 1250px;
+            max-width: 1300px;
             width: 100%;
         }
 
@@ -146,6 +146,15 @@
             background-color: #0096c7;
         }
 
+        button.variable-btn {
+            background-color: #2a9d8f;
+            color: white;
+        }
+
+        button.variable-btn:hover {
+            background-color: #21867a;
+        }
+
         button.igual {
             background-color: #2ec4b6;
             color: white;
@@ -228,10 +237,10 @@
                 <span style="color:#aaa; font-size:12px; font-weight:bold;">MODO MATEMÁTICO:</span>
                 <button class="indicador-angulo" id="btnAngulo" onclick="conmutarModoAngulo()">DEG</button>
             </div>
-            <input type="text" class="pantalla" id="pantalla" readonly placeholder="0">
+            <input type="text" class="pantalla" id="pantalla" placeholder="0">
 
             <div class="botones">
-                
+
                 <div class="etiqueta-grupo">Funciones Científicas</div>
                 <button class="cientifico" onclick="agregarValor('sin(')">sin</button>
                 <button class="cientifico" onclick="agregarValor('cos(')">cos</button>
@@ -239,7 +248,7 @@
                 <button class="cientifico" onclick="agregarValor('asin(')">sin⁻¹</button>
                 <button class="cientifico" onclick="agregarValor('acos(')">cos⁻¹</button>
                 <button class="cientifico" onclick="agregarValor('atan(')">tan⁻¹</button>
-                
+
                 <button class="cientifico" onclick="agregarValor('ln(')">ln</button>
                 <button class="cientifico" onclick="agregarValor('lg(')">log₁₀</button>
                 <button class="cientifico" onclick="agregarValor('sqrt(')">√</button>
@@ -252,7 +261,7 @@
                 <button class="cientifico" onclick="agregarValor('**')">xʸ</button>
                 <button style="grid-column: span 3; background-color: transparent;" disabled></button>
 
-                <div class="etiqueta-grupo">Complejos, Vectores y Constantes</div>
+                <div class="etiqueta-grupo">Complejos, Funciones y Constantes</div>
                 <button class="vector-btn" onclick="agregarValor('R(')">R(x,y)</button>
                 <button class="vector-btn" onclick="agregarValor('P(')">P(r,θ)</button>
                 <button class="vector-btn" onclick="convertirAGraficarPolar()">→ Polar</button>
@@ -260,8 +269,13 @@
                 <button onclick="agregarValor('Math.PI')">π</button>
                 <button onclick="agregarValor('Math.E')">e</button>
 
+                <button class="variable-btn" onclick="agregarValor('x')">X</button>
+                <button class="variable-btn" onclick="agregarValor('y')">Y</button>
+                <button class="variable-btn" onclick="agregarValor('t')">T</button>
+                <button style="grid-column: span 3; background-color: transparent;" disabled></button>
+
                 <div class="etiqueta-grupo">Teclado Numérico y Operaciones Aritméticas</div>
-                
+
                 <button class="numero" onclick="agregarValor('7')">7</button>
                 <button class="numero" onclick="agregarValor('8')">8</button>
                 <button class="numero" onclick="agregarValor('9')">9</button>
@@ -285,10 +299,10 @@
 
                 <div class="etiqueta-grupo">Control y Edición</div>
                 <button class="especial" onclick="limpiarPantalla()">AC</button>
-                <button class="especial" onclick="borrarUltimo()">DEL</button>
+                <button class="especial" onclick="borrarEnCursor()">DEL</button>
                 <button onclick="agregarValor('(')">(</button>
                 <button onclick="agregarValor(')')">)</button>
-                <button class="numero" onclick="agregarAns()">ANS</button>
+                <button class="numero" onclick="agregarValor(ultimaSolucion)">ANS</button>
                 <button class="igual" onclick="calcularOperacionCompleja()">=</button>
             </div>
         </div>
@@ -297,7 +311,7 @@
             <canvas id="planoVectorial" width="400" height="400"></canvas>
             <div class="info-grafico" id="infoGrafico">
                 Formatos soportados:<br>
-                <code>R(3,4) + P(5,30)</code> o <code>sin(45) * P(2,90)</code>
+                <code>R(3,4) + P(5,30)</code> o curvas como <code>50sin(3*t+50)</code>, <code>y**2</code> o <code>x**2</code>
             </div>
 
             <div class="contenedor-historial">
@@ -316,66 +330,66 @@
 
         let ultimaSolucion = "0";
         let mostrandoResultado = false;
-        let modoAngulo = "DEG"; 
+        let modoAngulo = "DEG";
+        let rangoEjeMaximo = 10;
 
-        dibujarPlano(0, 0);
+        dibujarPlanoBase();
 
         function conmutarModoAngulo() {
             modoAngulo = (modoAngulo === "DEG") ? "RAD" : "DEG";
             btnAngulo.innerText = modoAngulo;
         }
 
+        // ESCRITURA INTELIGENTE EN LA POSICIÓN DEL CURSOR
         function agregarValor(valor) {
             if (mostrandoResultado) {
                 pantalla.value = "";
                 mostrandoResultado = false;
             }
-            pantalla.value += valor;
-        }
 
-        function agregarAns() {
-            if (mostrandoResultado) {
-                pantalla.value = "";
-                mostrandoResultado = false;
-            }
-            pantalla.value += ultimaSolucion;
+            let posCursor = pantalla.selectionStart;
+            let textoPrevio = pantalla.value.substring(0, posCursor);
+            let textoPosterior = pantalla.value.substring(pantalla.selectionEnd, pantalla.value.length);
+
+            pantalla.value = textoPrevio + valor + textoPosterior;
+
+            // Reubicar el cursor justo después de lo que acabamos de insertar
+            pantalla.setSelectionRange(posCursor + valor.length, posCursor + valor.length);
+            pantalla.focus();
         }
 
         function limpiarPantalla() {
             pantalla.value = '';
             mostrandoResultado = false;
-            dibujarPlano(0, 0);
-            document.getElementById('infoGrafico').innerHTML = "Formatos soportados:<br><code>R(3,4) + P(5,30)</code> o <code>sin(45) * P(2,90)</code>";
+            rangoEjeMaximo = 10;
+            dibujarPlanoBase();
+            document.getElementById('infoGrafico').innerHTML = "Formatos soportados:<br><code>R(3,4) + P(5,30)</code> o curvas como <code>50sin(3*t+50)</code>, <code>y**2</code> o <code>x**2</code>";
         }
 
-        function borrarUltimo() {
+        // BORRADO INTELIGENTE EN LA POSICIÓN DEL CURSOR
+        function borrarEnCursor() {
             if (mostrandoResultado) {
                 pantalla.value = "";
                 mostrandoResultado = false;
-            } else {
-                const funciones = ['Math.PI', 'Math.E', 'asin(', 'acos(', 'atan(', 'pow10(', 'sqrt(', 'fact(', 'inv(', 'sin(', 'cos(', 'tan(', 'exp(', 'ln(', 'lg(', 'R(', 'P('];
-                let borradoEspecial = false;
-                for(let f of funciones) {
-                    if(pantalla.value.endsWith(f)) {
-                        pantalla.value = pantalla.value.slice(0, -f.length);
-                        borradoEspecial = true;
-                        break;
-                    }
-                }
-                if(!borradoEspecial) {
-                    pantalla.value = pantalla.value.slice(0, -1);
-                }
+                pantalla.focus();
+                return;
             }
+
+            let posCursor = pantalla.selectionStart;
+            if (posCursor > 0) {
+                let textoPrevio = pantalla.value.substring(0, posCursor - 1);
+                let textoPosterior = pantalla.value.substring(pantalla.selectionEnd, pantalla.value.length);
+
+                pantalla.value = textoPrevio + textoPosterior;
+                pantalla.setSelectionRange(posCursor - 1, posCursor - 1);
+            }
+            pantalla.focus();
         }
 
-        // CORRECCIÓN HISTORIAL: Concatena inteligentemente en lugar de machacar
         function cargarHistorial(valor) {
-            if (mostrandoResultado) {
-                pantalla.value = valor;
-                mostrandoResultado = false;
-            } else {
-                pantalla.value += valor;
-            }
+            pantalla.value = valor;
+            mostrandoResultado = false;
+            pantalla.focus();
         }
 
         function añadirAlHistorial(operacion, resultado) {
@@ -386,7 +400,6 @@
             listaHistorial.insertBefore(item, listaHistorial.firstChild);
         }
 
-        // MOTOR MATEMÁTICO DE NÚMEROS COMPLEJOS
         class Complejo {
             constructor(re, im) {
                 this.re = re;
@@ -463,7 +476,10 @@
                 pantalla.value = resPolar;
                 ultimaSolucion = resPolar;
                 mostrandoResultado = true;
-                actualizarInfoYGrafico(c.re, c.im, magnitud, angulo);
+                rangoEjeMaximo = Math.max(Math.abs(c.re), Math.abs(c.im), 5);
+                dibujarPlanoBase();
+                graficarUnicoVector(c.re, c.im);
+                actualizarInformacionDeTexto(c.re, c.im, magnitud, angulo, false);
             } catch(e) { pantalla.value = "Error"; mostrandoResultado = true; }
         }
 
@@ -479,15 +495,28 @@
                 pantalla.value = resRect;
                 ultimaSolucion = resRect;
                 mostrandoResultado = true;
-                actualizarInfoYGrafico(c.re, c.im, magnitud, angulo);
+                rangoEjeMaximo = Math.max(Math.abs(c.re), Math.abs(c.im), 5);
+                dibujarPlanoBase();
+                graficarUnicoVector(c.re, c.im);
+                actualizarInformacionDeTexto(c.re, c.im, magnitud, angulo, false);
             } catch(e) { pantalla.value = "Error"; mostrandoResultado = true; }
         }
 
-        // MOTOR ARITMÉTICO CENTRAL: PARSER TOKENIZADOR JERÁRQUICO
         function calcularOperacionCompleja() {
             let expresionOriginal = pantalla.value;
             try {
                 let expr = expresionOriginal.replace(/\s+/g, '');
+
+                // Autocorrección de multiplicación implícita (ej: 50sin -> 50*sin)
+                expr = expr.replace(/(\d+)(sin|cos|tan|ln|lg|sqrt|R|P|x|y|t)/g, '$1*$2');
+
+                let limpiaParaDeteccion = expr.replace(/R\(/g, '').replace(/P\(/g, '');
+                if (limpiaParaDeteccion.includes('x') || limpiaParaDeteccion.includes('y') || limpiaParaDeteccion.includes('t')) {
+                    graficarFuncionContinua(expr);
+                    añadirAlHistorial("Gráfica", expresionOriginal);
+                    mostrandoResultado = true;
+                    return;
+                }
 
                 expr = expr.replace(/([0-9.-]+\s*[+-]\s*[0-9.-]+)j/g, function(match, complexGroup) {
                     let c = parseComplejoString(complexGroup);
@@ -509,7 +538,11 @@
                     ultimaSolucion = resFinal;
 
                     añadirAlHistorial(expresionOriginal, resFinal);
-                    actualizarInfoYGrafico(resultadoComplejo.re, resultadoComplejo.im, magnitud, angulo);
+
+                    rangoEjeMaximo = Math.max(Math.abs(resultadoComplejo.re), Math.abs(resultadoComplejo.im), 5);
+                    dibujarPlanoBase();
+                    graficarUnicoVector(resultadoComplejo.re, resultadoComplejo.im);
+                    actualizarInformacionDeTexto(resultadoComplejo.re, resultadoComplejo.im, magnitud, angulo, false);
                 }
                 mostrandoResultado = true;
 
@@ -519,10 +552,9 @@
             }
         }
 
-        function parsearYCalcularComplejos(expr) {
+        function parsearYCalcularComplejos(expr, valorVariableIntercambiable = 0, nombreVariable = 'x') {
             let tokens = [];
             let i = 0;
-            
             const funcionesCientificas = ['asin', 'acos', 'atan', 'pow10', 'sqrt', 'fact', 'inv', 'sin', 'cos', 'tan', 'exp', 'ln', 'lg', 'R', 'P'];
 
             while (i < expr.length) {
@@ -535,6 +567,9 @@
                         tokens.push(c);
                         i++;
                     }
+                } else if (c === nombreVariable && (i === 0 || expr[i-1] !== 'e') && !funcionesCientificas.includes(expr.slice(i, i+3))) {
+                    tokens.push(valorVariableIntercambiable.toString());
+                    i++;
                 } else if (expr.startsWith('Math.PI', i)) {
                     tokens.push(Math.PI.toString());
                     i += 7;
@@ -552,15 +587,17 @@
                             break;
                         }
                     }
-                    
+
                     if(!encontradaf) {
-                        // EXCLUSIÓN CRÍTICA DE LA COMA: No mezclar la coma ',' como parte del cuerpo del número decimal
                         if ((c >= '0' && c <= '9') || c === '.') {
                             let inicioNum = i;
                             while (i < expr.length && ((expr[i] >= '0' && expr[i] <= '9') || expr[i] === '.')) i++;
                             tokens.push(expr.slice(inicioNum, i));
                         } else {
-                            i++; 
+                            if(c === 'x' || c === 'y' || c === 't') {
+                                tokens.push(valorVariableIntercambiable.toString());
+                            }
+                            i++;
                         }
                     }
                 }
@@ -570,51 +607,46 @@
 
             function parsePrimario() {
                 let token = tokens[pos];
-                
                 if (token === '(') {
-                    pos++; 
+                    pos++;
                     let res = parseSumaResta();
-                    pos++; 
+                    pos++;
                     return res;
                 }
 
                 if (funcionesCientificas.includes(token)) {
                     let func = token;
-                    pos++; // saltar función
-                    pos++; // saltar '('
-                    
+                    pos++; pos++;
+
                     if (func === 'R' || func === 'P') {
-                        let arg1 = parseSumaResta(); 
-                        pos++; // saltar ','
-                        let arg2 = parseSumaResta(); 
-                        pos++; // saltar ')'
+                        let arg1 = parseSumaResta(); pos++;
+                        let arg2 = parseSumaResta(); pos++;
                         return (func === 'R') ? R(arg1.re, arg2.re) : P(arg1.re, arg2.re);
                     }
 
                     let arg = parseSumaResta();
-                    pos++; // saltar ')'
-
-                    let v = arg.re; 
+                    pos++;
+                    let v = arg.re;
 
                     switch(func) {
-                        case 'sin': 
+                        case 'sin':
                             if(modoAngulo === "DEG") v = v * (Math.PI / 180);
                             return new Complejo(Math.sin(v), 0);
-                        case 'cos': 
+                        case 'cos':
                             if(modoAngulo === "DEG") v = v * (Math.PI / 180);
                             return new Complejo(Math.cos(v), 0);
-                        case 'tan': 
+                        case 'tan':
                             if(modoAngulo === "DEG") v = v * (Math.PI / 180);
                             return new Complejo(Math.tan(v), 0);
-                        case 'asin': 
+                        case 'asin':
                             let resAsin = Math.asin(v);
                             if(modoAngulo === "DEG") resAsin = resAsin * (180 / Math.PI);
                             return new Complejo(resAsin, 0);
-                        case 'acos': 
+                        case 'acos':
                             let resAcos = Math.acos(v);
                             if(modoAngulo === "DEG") resAcos = resAcos * (180 / Math.PI);
                             return new Complejo(resAcos, 0);
-                        case 'atan': 
+                        case 'atan':
                             let resAtan = Math.atan(v);
                             if(modoAngulo === "DEG") resAtan = resAtan * (180 / Math.PI);
                             return new Complejo(resAtan, 0);
@@ -630,7 +662,8 @@
                 }
 
                 pos++;
-                return new Complejo(parseFloat(token), 0);
+                let parsedNum = parseFloat(token);
+                return new Complejo(isNaN(parsedNum) ? 0 : parsedNum, 0);
             }
 
             function parsePotencia() {
@@ -678,56 +711,158 @@
             return result;
         }
 
-        function actualizarInfoYGrafico(x, y, mag, ang) {
-            let signo = y >= 0 ? "+" : "";
-            document.getElementById('infoGrafico').innerHTML = `
-                <strong>Resultado Complejo:</strong> ${x.toFixed(2)}${signo}${y.toFixed(2)}j<br>
-                <strong>Módulo (r):</strong> ${mag.toFixed(2)}<br>
-                <strong>Ángulo (θ):</strong> ${ang.toFixed(1)}°
-            `;
-            dibujarPlano(x, y);
+        // MOTOR CON ZOOM AUTÓNOMO POR MUESTREO DE AMPLITUDES TRIDIMENSIONALES
+        function graficarFuncionContinua(expr) {
+            let esVariableY = expr.includes('y');
+            let esVariableT = expr.includes('t');
+            let nombreVar = esVariableY ? 'y' : (esVariableT ? 't' : 'x');
+
+            // 1. ESCANEO PREVIO DE AMPLITUD DE RESPUESTA (Encuentra máximos y mínimos reales)
+            let amplitudMaxDetectada = 0;
+            for (let k = -50; k <= 50; k += 1) {
+                try {
+                    let evaluacionDePrueba = parsearYCalcularComplejos(expr, k, nombreVar);
+                    let valorAbsoluto = Math.abs(evaluacionDePrueba.re);
+                    if (isFinite(valorAbsoluto) && !isNaN(valorAbsoluto)) {
+                        if (valorAbsoluto > amplitudMaxDetectada) {
+                            amplitudMaxDetectada = valorAbsoluto;
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            // Asignar dinámicamente un multiplicador cómodo basado en el pico de la señal
+            if (amplitudMaxDetectada > 0) {
+                rangoEjeMaximo = amplitudMaxDetectada * 1.2; // Deja un 20% de margen arriba y abajo
+            } else {
+                rangoEjeMaximo = 10;
+            }
+
+            dibujarPlanoBase();
+
+            const centroX = canvas.width / 2;
+            const centroY = canvas.height / 2;
+            const escala = (canvas.width / 2 - 25) / rangoEjeMaximo;
+
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#00ff66';
+            ctx.beginPath();
+
+            let primerPunto = true;
+
+            if (esVariableY) {
+                for (let pixelY = 0; pixelY <= canvas.height; pixelY++) {
+                    let valYMatematico = ((centroY - pixelY) / escala);
+                    try {
+                        let resComplejo = parsearYCalcularComplejos(expr, valYMatematico, 'y');
+                        let valXCalculado = resComplejo.re;
+
+                        if (!isNaN(valXCalculado) && isFinite(valXCalculado)) {
+                            let pixelX = centroX + valXCalculado * escala;
+                            if (primerPunto) {
+                                ctx.moveTo(pixelX, pixelY);
+                                primerPunto = false;
+                            } else {
+                                ctx.lineTo(pixelX, pixelY);
+                            }
+                        }
+                    } catch (e) {}
+                }
+            } else {
+                // Barrido horizontal estándar para X o T
+                // Se extiende el barrido un poco más allá de los píxeles para asegurar líneas fluidas continuas
+                for (let pixelX = 0; pixelX <= canvas.width; pixelX++) {
+                    let valVarMatematico = ((pixelX - centroX) / escala);
+                    try {
+                        let resComplejo = parsearYCalcularComplejos(expr, valVarMatematico, nombreVar);
+                        let valYCalculado = resComplejo.re;
+
+                        if (!isNaN(valYCalculado) && isFinite(valYCalculado)) {
+                            let pixelY = centroY - valYCalculado * escala;
+                            if (primerPunto) {
+                                ctx.moveTo(pixelX, pixelY);
+                                primerPunto = false;
+                            } else {
+                                ctx.lineTo(pixelX, pixelY);
+                            }
+                        }
+                    } catch (e) {}
+                }
+            }
+            ctx.stroke();
+            actualizarInformacionDeTexto(0, 0, 0, 0, true, expr);
         }
 
-        function dibujarPlano(vectorX, vectorY) {
+        function actualizarInformacionDeTexto(x, y, mag, ang, esModoFuncion, expresion = "") {
+            let info = document.getElementById('infoGrafico');
+            if (esModoFuncion) {
+                let variableEje = expresion.includes('y') ? 'x = f(y)' : (expresion.includes('t') ? 'y = f(t)' : 'y = f(x)');
+                info.innerHTML = `
+                    <strong style="color: #2ec4b6;">Modo Función Activo (${variableEje})</strong><br>
+                    <strong>Ecuación:</strong> ${expresion}<br>
+                    <span style="font-size:11px; color:#ff9f1c;">Zoom inteligente: Ejes auto-escalados a ±${rangoEjeMaximo.toFixed(1)}.</span>
+                `;
+            } else {
+                let signo = y >= 0 ? "+" : "";
+                info.innerHTML = `
+                    <strong>Resultado Complejo:</strong> ${x.toFixed(2)}${signo}${y.toFixed(2)}j<br>
+                    <strong>Módulo (r):</strong> ${mag.toFixed(2)}<br>
+                    <strong>Ángulo (θ):</strong> ${ang.toFixed(1)}°
+                `;
+            }
+        }
+
+        function dibujarPlanoBase() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const centroX = canvas.width / 2;
             const centroY = canvas.height / 2;
-
-            const maxCoordenada = Math.max(Math.abs(vectorX), Math.abs(vectorY), 5);
-            const escala = (canvas.width / 2 - 25) / maxCoordenada;
+            const escala = (canvas.width / 2 - 25) / rangoEjeMaximo;
 
             ctx.strokeStyle = '#25252b'; ctx.lineWidth = 1;
-            for(let i = -Math.ceil(maxCoordenada); i <= Math.ceil(maxCoordenada); i++) {
-                ctx.beginPath(); ctx.moveTo(centroX + i * escala, 0); ctx.lineTo(centroX + i * escala, canvas.height); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, centroY - i * escala); ctx.lineTo(canvas.width, centroY - i * escala); ctx.stroke();
+            for(let i = -5; i <= 5; i++) {
+                if(i===0) continue;
+                let dist = (rangoEjeMaximo / 5) * i;
+                ctx.beginPath(); ctx.moveTo(centroX + dist * escala, 0); ctx.lineTo(centroX + dist * escala, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, centroY - dist * escala); ctx.lineTo(canvas.width, centroY - dist * escala); ctx.stroke();
             }
 
             ctx.strokeStyle = '#555563'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(10, centroY); ctx.lineTo(canvas.width - 10, centroY); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(centroX, 10); ctx.lineTo(centroX, canvas.height - 10); ctx.stroke();
 
-            if (vectorX !== 0 || vectorY !== 0) {
-                const destinoX = centroX + vectorX * escala;
-                const destinoY = centroY - vectorY * escala;
+            ctx.fillStyle = '#888899';
+            ctx.font = '10px Segoe UI';
+            ctx.fillText(rangoEjeMaximo.toFixed(1), canvas.width - 32, centroY + 14);
+            ctx.fillText("-" + rangoEjeMaximo.toFixed(1), 5, centroY + 14);
+            ctx.fillText(rangoEjeMaximo.toFixed(1), centroX + 6, 18);
+            ctx.fillText("-" + rangoEjeMaximo.toFixed(1), centroX + 6, canvas.height - 10);
+        }
 
-                ctx.strokeStyle = '#ff9f1c'; ctx.setLineDash([4, 4]);
-                ctx.beginPath(); ctx.moveTo(destinoX, destinoY); ctx.lineTo(destinoX, centroY);
-                ctx.moveTo(destinoX, destinoY); ctx.lineTo(centroX, destinoY); ctx.stroke();
-                ctx.setLineDash([]);
+        function graficarUnicoVector(vectorX, vectorY) {
+            const centroX = canvas.width / 2;
+            const centroY = canvas.height / 2;
+            const escala = (canvas.width / 2 - 25) / rangoEjeMaximo;
 
-                ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 4;
-                ctx.beginPath(); ctx.moveTo(centroX, centroY); ctx.lineTo(destinoX, destinoY); ctx.stroke();
+            const destinoX = centroX + vectorX * escala;
+            const destinoY = centroY - vectorY * escala;
 
-                const angulo = Math.atan2(destinoY - centroY, destinoX - centroX);
-                const tamanoFlecha = 12;
-                ctx.fillStyle = '#00ff66';
-                ctx.beginPath(); ctx.moveTo(destinoX, destinoY);
-                ctx.lineTo(destinoX - tamanoFlecha * Math.cos(angulo - Math.PI / 6), destinoY - tamanoFlecha * Math.sin(angulo - Math.PI / 6));
-                ctx.lineTo(destinoX - tamanoFlecha * Math.cos(angulo + Math.PI / 6), destinoY - tamanoFlecha * Math.sin(angulo + Math.PI / 6));
-                ctx.fill();
+            ctx.strokeStyle = '#ff9f1c'; ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(destinoX, destinoY); ctx.lineTo(destinoX, centroY);
+            ctx.moveTo(destinoX, destinoY); ctx.lineTo(centroX, destinoY); ctx.stroke();
+            ctx.setLineDash([]);
 
-                ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(centroX, centroY, 4, 0, 2 * Math.PI); ctx.fill();
-            }
+            ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(centroX, centroY); ctx.lineTo(destinoX, destinoY); ctx.stroke();
+
+            const angulo = Math.atan2(destinoY - centroY, destinoX - centroX);
+            const tamanoFlecha = 12;
+            ctx.fillStyle = '#00ff66';
+            ctx.beginPath(); ctx.moveTo(destinoX, destinoY);
+            ctx.lineTo(destinoX - tamanoFlecha * Math.cos(angulo - Math.PI / 6), destinoY - tamanoFlecha * Math.sin(angulo - Math.PI / 6));
+            ctx.lineTo(destinoX - tamanoFlecha * Math.cos(angulo + Math.PI / 6), destinoY - tamanoFlecha * Math.sin(angulo + Math.PI / 6));
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(centroX, centroY, 4, 0, 2 * Math.PI); ctx.fill();
         }
     </script>
 </body>
