@@ -8,7 +8,7 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container container-wide">
         <h1>Sitio en Construcción</h1>
         <p>Espacio dedicado a los contenidos y apuntes de 2º de Bachillerato.</p>
 
@@ -26,16 +26,70 @@
 
         <hr class="separator">
 
-        <h2 style="margin-bottom: 1rem; font-size: 1.5rem; color: #38bdf8;">Acceso a los Temas</h2>
-        <div class="temas-container">
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/Estructuras/CalculoVigas.html'">Estructuras</button>
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/Materiales/DiagramaFeC.html'">Diagrama Fe-C</button>
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/Materiales/DiagramasFase.html'">Diagrama de fases</button>
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/Materiales/EnsayoMateriales.html'">Ensayo de materiales</button>
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/Automatica/regulacion.html'">Funciones de transferencia / Routh</button>
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/CA/AC.html'">Circuitos de corriente alterna</button>
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/ElectronicaDigital/digital.html'">Tablas de verdad / Mapa de Karnaugh</button>
-            <button class="btn-tema" onclick="window.location.href='Ingenieria/MaqTermicas/MaqTermicas.html'">Maquinas termicas</button>
+        <h2 class="main-title">Acceso a los Temas</h2>
+        
+        <div class="secciones-wrapper">
+            
+            <div class="categoria-card">
+                <h3>Automática</h3>
+                <div class="temas-container">
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/Automatica/regulacion.html'">Funciones de Transferencia / Routh</button>
+                </div>
+            </div>
+
+            <div class="categoria-card">
+                <h3>Electricidad</h3>
+                <div class="temas-container">
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/CA/AC.html'">Circuitos de Corriente Alterna</button>
+                    <button class="btn-tema" onclick="window.location.href='https://salamoisan.uva.es/alterna/'">Circuitos de Corriente Alterna II</button>
+                    
+                </div>
+            </div>
+
+            <div class="categoria-card">
+                <h3>Electrónica Digital</h3>
+                <div class="temas-container">
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/ElectronicaDigital/digital.html'">Tablas de Verdad / Karnaugh</button>
+                </div>
+            </div>
+
+            <div class="categoria-card">
+                <h3>Estructuras</h3>
+                <div class="temas-container">
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/Estructuras/CalculoVigas.html'">Cálculo de Vigas</button>
+                </div>
+            </div>
+
+            <div class="categoria-card">
+                <h3>Máquinas Térmicas</h3>
+                <div class="temas-container">
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/MaqTermicas/MaqTermicas.html'">Máquinas Térmicas</button>
+                </div>
+            </div>
+
+            <div class="categoria-card">
+                <h3>Materiales</h3>
+                <div class="temas-container">
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/Materiales/DiagramaFeC.html'">Diagrama Fe-C</button>
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/Materiales/DiagramasFase.html'">Diagrama de Fases</button>
+                    <button class="btn-tema" onclick="window.location.href='Ingenieria/Materiales/EnsayoMateriales.html'">Ensayo de Materiales</button>
+                </div>
+            </div>
+
+            <div class="categoria-card">
+                <h3>Instrumentación</h3>
+                <div class="temas-container">
+                    <button class="btn-tema" onclick="window.location.href='Instrumentacion/calculadora.html'">Calculadora</button>
+                </div>
+            </div>
+
+            <div class="categoria-card otros-enlaces">
+                <h3>Otros Apartados</h3>
+                <div class="temas-container">
+                    <span class="placeholder-text">Próximamente más recursos...</span>
+                </div>
+            </div>
+
         </div>
     </div>
 
