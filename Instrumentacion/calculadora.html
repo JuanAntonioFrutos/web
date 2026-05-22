@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Científica y Compleja Definitiva</title>
+    <title>Calculadora Científica Compleja Avanzada - Corregida</title>
     <style>
         * {
             box-sizing: border-box;
@@ -28,12 +28,12 @@
             border-radius: 20px;
             box-shadow: 0px 15px 35px rgba(0,0,0,0.5);
             gap: 25px;
-            max-width: 1150px;
+            max-width: 1250px;
             width: 100%;
         }
 
         .seccion-calculadora {
-            flex: 1.2;
+            flex: 1.4;
         }
 
         .seccion-grafico {
@@ -47,28 +47,47 @@
             gap: 15px;
         }
 
+        .encabezado-pantalla {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .indicador-angulo {
+            background-color: #00b4d8;
+            color: white;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            text-transform: uppercase;
+        }
+
         .pantalla {
             width: 100%;
-            height: 70px;
+            height: 75px;
             background-color: #0f0f12;
             color: #00ff66;
-            font-size: 22px;
+            font-size: 24px;
             text-align: right;
             padding: 15px;
             border: 2px solid #3e3e4a;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             outline: none;
         }
 
         .botones {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 8px;
         }
 
         button {
-            padding: 14px 4px;
+            padding: 12px 2px;
             font-size: 13px;
             font-weight: 600;
             border: none;
@@ -109,6 +128,15 @@
             background-color: #ff334b;
         }
 
+        button.cientifico {
+            background-color: #6d597a;
+            color: white;
+        }
+
+        button.cientifico:hover {
+            background-color: #b56576;
+        }
+
         button.vector-btn {
             background-color: #00b4d8;
             color: white;
@@ -121,7 +149,6 @@
         button.igual {
             background-color: #2ec4b6;
             color: white;
-            grid-column: span 2;
         }
 
         button.igual:hover {
@@ -152,7 +179,7 @@
             border: 1px solid #3e3e4a;
             border-radius: 6px;
             padding: 10px;
-            max-height: 120px;
+            max-height: 110px;
             overflow-y: auto;
         }
 
@@ -180,53 +207,87 @@
             background-color: #222227;
             color: #00ff66;
         }
+
+        .etiqueta-grupo {
+            grid-column: span 6;
+            font-size: 11px;
+            color: #888;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 5px;
+            border-bottom: 1px solid #3e3e4a;
+            padding-bottom: 2px;
+        }
     </style>
 </head>
 <body>
 
     <div class="contenedor-principal">
         <div class="seccion-calculadora">
+            <div class="encabezado-pantalla">
+                <span style="color:#aaa; font-size:12px; font-weight:bold;">MODO MATEMÁTICO:</span>
+                <button class="indicador-angulo" id="btnAngulo" onclick="conmutarModoAngulo()">DEG</button>
+            </div>
             <input type="text" class="pantalla" id="pantalla" readonly placeholder="0">
-            
+
             <div class="botones">
-                <button class="especial" onclick="limpiarPantalla()">AC</button>
-                <button class="especial" onclick="borrarUltimo()">DEL</button>
-                <button onclick="agregarValor('(')">(</button>
-                <button onclick="agregarValor(')')">)</button>
-                <button class="operador" onclick="agregarValor('/')">÷</button>
+                
+                <div class="etiqueta-grupo">Funciones Científicas</div>
+                <button class="cientifico" onclick="agregarValor('sin(')">sin</button>
+                <button class="cientifico" onclick="agregarValor('cos(')">cos</button>
+                <button class="cientifico" onclick="agregarValor('tan(')">tan</button>
+                <button class="cientifico" onclick="agregarValor('asin(')">sin⁻¹</button>
+                <button class="cientifico" onclick="agregarValor('acos(')">cos⁻¹</button>
+                <button class="cientifico" onclick="agregarValor('atan(')">tan⁻¹</button>
+                
+                <button class="cientifico" onclick="agregarValor('ln(')">ln</button>
+                <button class="cientifico" onclick="agregarValor('lg(')">log₁₀</button>
+                <button class="cientifico" onclick="agregarValor('sqrt(')">√</button>
+                <button class="cientifico" onclick="agregarValor('inv(')">1/x</button>
+                <button class="cientifico" onclick="agregarValor('fact(')">x!</button>
+                <button class="cientifico" onclick="agregarValor('exp(')">eˣ</button>
 
-                <button onclick="agregarValor('Math.sin(')">sin</button>
-                <button onclick="agregarValor('Math.cos(')">cos</button>
-                <button onclick="agregarValor('R(')">R(x,y)</button>
-                <button onclick="agregarValor('P(')">P(r,θ)</button>
-                <button class="operador" onclick="agregarValor('*')">×</button>
+                <button class="cientifico" onclick="agregarValor('pow10(')">10ˣ</button>
+                <button class="cientifico" onclick="agregarValor('**2')">x²</button>
+                <button class="cientifico" onclick="agregarValor('**')">xʸ</button>
+                <button style="grid-column: span 3; background-color: transparent;" disabled></button>
 
+                <div class="etiqueta-grupo">Complejos, Vectores y Constantes</div>
+                <button class="vector-btn" onclick="agregarValor('R(')">R(x,y)</button>
+                <button class="vector-btn" onclick="agregarValor('P(')">P(r,θ)</button>
+                <button class="vector-btn" onclick="convertirAGraficarPolar()">→ Polar</button>
+                <button class="vector-btn" onclick="convertirAGraficarRectangular()">→ Rect</button>
+                <button onclick="agregarValor('Math.PI')">π</button>
+                <button onclick="agregarValor('Math.E')">e</button>
+
+                <div class="etiqueta-grupo">Teclado Numérico y Operaciones Aritméticas</div>
+                
                 <button class="numero" onclick="agregarValor('7')">7</button>
                 <button class="numero" onclick="agregarValor('8')">8</button>
                 <button class="numero" onclick="agregarValor('9')">9</button>
-                <button onclick="agregarValor('**2')">x²</button>
-                <button class="operador" onclick="agregarValor('-')">-</button>
+                <button style="background-color: transparent;" disabled></button>
+                <button class="operador" onclick="agregarValor('/')">÷</button>
+                <button class="operador" onclick="agregarValor('*')">×</button>
 
                 <button class="numero" onclick="agregarValor('4')">4</button>
                 <button class="numero" onclick="agregarValor('5')">5</button>
                 <button class="numero" onclick="agregarValor('6')">6</button>
-                <button onclick="agregarValor('**3')">x³</button>
+                <button style="background-color: transparent;" disabled></button>
+                <button class="operador" onclick="agregarValor('-')">-</button>
                 <button class="operador" onclick="agregarValor('+')">+</button>
 
                 <button class="numero" onclick="agregarValor('1')">1</button>
                 <button class="numero" onclick="agregarValor('2')">2</button>
                 <button class="numero" onclick="agregarValor('3')">3</button>
-                <button onclick="agregarValor('**')">x^y</button>
-                <button onclick="agregarValor('Math.sqrt(')">√</button>
-
                 <button class="numero" onclick="agregarValor('0')">0</button>
                 <button onclick="agregarValor('.')">.</button>
                 <button onclick="agregarValor(',')">,</button>
-                <button onclick="agregarValor('Math.PI')">π</button>
-                <button onclick="agregarValor('Math.E')">e</button>
 
-                <button class="vector-btn" onclick="convertirAGraficarPolar()">→ Polar</button>
-                <button class="vector-btn" onclick="convertirAGraficarRectangular()">→ Rect</button>
+                <div class="etiqueta-grupo">Control y Edición</div>
+                <button class="especial" onclick="limpiarPantalla()">AC</button>
+                <button class="especial" onclick="borrarUltimo()">DEL</button>
+                <button onclick="agregarValor('(')">(</button>
+                <button onclick="agregarValor(')')">)</button>
                 <button class="numero" onclick="agregarAns()">ANS</button>
                 <button class="igual" onclick="calcularOperacionCompleja()">=</button>
             </div>
@@ -236,11 +297,11 @@
             <canvas id="planoVectorial" width="400" height="400"></canvas>
             <div class="info-grafico" id="infoGrafico">
                 Formatos soportados:<br>
-                <code>2+5*3</code> o <code>(0.00+70.71j) + R(9,3)</code>
+                <code>R(3,4) + P(5,30)</code> o <code>sin(45) * P(2,90)</code>
             </div>
-            
+
             <div class="contenedor-historial">
-                <div class="titulo-historial">Historial (clic para cargar)</div>
+                <div class="titulo-historial">Historial (clic para usar valor)</div>
                 <div id="listaHistorial"></div>
             </div>
         </div>
@@ -251,11 +312,18 @@
         const canvas = document.getElementById('planoVectorial');
         const ctx = canvas.getContext('2d');
         const listaHistorial = document.getElementById('listaHistorial');
+        const btnAngulo = document.getElementById('btnAngulo');
 
-        let ultimaSolucion = "0"; 
-        let mostrandoResultado = false; 
+        let ultimaSolucion = "0";
+        let mostrandoResultado = false;
+        let modoAngulo = "DEG"; 
 
         dibujarPlano(0, 0);
+
+        function conmutarModoAngulo() {
+            modoAngulo = (modoAngulo === "DEG") ? "RAD" : "DEG";
+            btnAngulo.innerText = modoAngulo;
+        }
 
         function agregarValor(valor) {
             if (mostrandoResultado) {
@@ -277,7 +345,7 @@
             pantalla.value = '';
             mostrandoResultado = false;
             dibujarPlano(0, 0);
-            document.getElementById('infoGrafico').innerHTML = "Formatos soportados:<br><code>2+5*3</code> o <code>(0.00+70.71j) + R(9,3)</code>";
+            document.getElementById('infoGrafico').innerHTML = "Formatos soportados:<br><code>R(3,4) + P(5,30)</code> o <code>sin(45) * P(2,90)</code>";
         }
 
         function borrarUltimo() {
@@ -285,13 +353,29 @@
                 pantalla.value = "";
                 mostrandoResultado = false;
             } else {
-                pantalla.value = pantalla.value.slice(0, -1);
+                const funciones = ['Math.PI', 'Math.E', 'asin(', 'acos(', 'atan(', 'pow10(', 'sqrt(', 'fact(', 'inv(', 'sin(', 'cos(', 'tan(', 'exp(', 'ln(', 'lg(', 'R(', 'P('];
+                let borradoEspecial = false;
+                for(let f of funciones) {
+                    if(pantalla.value.endsWith(f)) {
+                        pantalla.value = pantalla.value.slice(0, -f.length);
+                        borradoEspecial = true;
+                        break;
+                    }
+                }
+                if(!borradoEspecial) {
+                    pantalla.value = pantalla.value.slice(0, -1);
+                }
             }
         }
 
+        // CORRECCIÓN HISTORIAL: Concatena inteligentemente en lugar de machacar
         function cargarHistorial(valor) {
-            pantalla.value = valor;
-            mostrandoResultado = false;
+            if (mostrandoResultado) {
+                pantalla.value = valor;
+                mostrandoResultado = false;
+            } else {
+                pantalla.value += valor;
+            }
         }
 
         function añadirAlHistorial(operacion, resultado) {
@@ -302,19 +386,19 @@
             listaHistorial.insertBefore(item, listaHistorial.firstChild);
         }
 
-        // CONTROL MATEMÁTICO REAL DE NÚMEROS COMPLEJOS
+        // MOTOR MATEMÁTICO DE NÚMEROS COMPLEJOS
         class Complejo {
             constructor(re, im) {
                 this.re = re;
                 this.im = im;
             }
-            sumar(c) { 
+            sumar(c) {
                 let obj = (c instanceof Complejo) ? c : new Complejo(c, 0);
-                return new Complejo(this.re + obj.re, this.im + obj.im); 
+                return new Complejo(this.re + obj.re, this.im + obj.im);
             }
-            restar(c) { 
+            restar(c) {
                 let obj = (c instanceof Complejo) ? c : new Complejo(c, 0);
-                return new Complejo(this.re - obj.re, this.im - obj.im); 
+                return new Complejo(this.re - obj.re, this.im - obj.im);
             }
             multiplicar(c) {
                 let obj = (c instanceof Complejo) ? c : new Complejo(c, 0);
@@ -335,7 +419,6 @@
             }
         }
 
-        // Funciones puente llamadas por eval()
         function R(x, y) { return new Complejo(x, y); }
         function P(r, anguloGrados) {
             const rad = anguloGrados * (Math.PI / 180);
@@ -356,24 +439,26 @@
             return new Complejo(isNaN(re)?0:re, isNaN(im)?0:im);
         }
 
+        function evaluarEntradaAObjeto(entrada) {
+            let expr = entrada.trim();
+            if (expr.includes('j') && !expr.includes('R(')) {
+                return parseComplejoString(expr);
+            }
+            let res = parsearYCalcularComplejos(expr);
+            if (res instanceof Complejo) return res;
+            let val = parseFloat(res);
+            if (!isNaN(val)) return new Complejo(val, 0);
+            throw new Error("Formato inválido");
+        }
+
         function convertirAGraficarPolar() {
             try {
-                let entrada = pantalla.value.replace(/°/g, '');
-                let c;
-                if(entrada.includes('j')) {
-                    c = parseComplejoString(entrada);
-                } else {
-                    c = eval(entrada);
-                }
-                if (!(c instanceof Complejo)) {
-                    c = new Complejo(parseFloat(c), 0);
-                }
-
+                let c = evaluarEntradaAObjeto(pantalla.value);
                 const magnitud = Math.sqrt(c.re*c.re + c.im*c.im);
                 let angulo = Math.atan2(c.im, c.re) * (180 / Math.PI);
                 if (angulo < 0) angulo += 360;
 
-                let resPolar = `P(${magnitud.toFixed(2)},${angulo.toFixed(1)}°)`;
+                let resPolar = `P(${magnitud.toFixed(2)},${angulo.toFixed(1)})`;
                 añadirAlHistorial(`→Polar(${pantalla.value})`, resPolar);
                 pantalla.value = resPolar;
                 ultimaSolucion = resPolar;
@@ -384,12 +469,7 @@
 
         function convertirAGraficarRectangular() {
             try {
-                let entrada = pantalla.value.replace(/°/g, '');
-                let c = eval(entrada);
-                if (!(c instanceof Complejo)) {
-                    c = new Complejo(parseFloat(c), 0);
-                }
-
+                let c = evaluarEntradaAObjeto(pantalla.value);
                 const magnitud = Math.sqrt(c.re*c.re + c.im*c.im);
                 let angulo = Math.atan2(c.im, c.re) * (180 / Math.PI);
                 if (angulo < 0) angulo += 360;
@@ -403,39 +483,19 @@
             } catch(e) { pantalla.value = "Error"; mostrandoResultado = true; }
         }
 
-        // MOTOR ARITMÉTICO CENTRAL REPARADO CON PARSER REGEX SEGURO
+        // MOTOR ARITMÉTICO CENTRAL: PARSER TOKENIZADOR JERÁRQUICO
         function calcularOperacionCompleja() {
             let expresionOriginal = pantalla.value;
             try {
-                let expr = expresionOriginal.replace(/°/g, '');
+                let expr = expresionOriginal.replace(/\s+/g, '');
 
-                // 1. Convertir formatos de texto plano "0.00+70.71j" (del ANS) a constructores de objetos R(x,y)
                 expr = expr.replace(/([0-9.-]+\s*[+-]\s*[0-9.-]+)j/g, function(match, complexGroup) {
                     let c = parseComplejoString(complexGroup);
                     return `R(${c.re},${c.im})`;
                 });
-                // Tratar números complejos puros de una sola componente (ej: "70.71j")
                 expr = expr.replace(/\b([0-9.-]+)j\b/g, "R(0,$1)");
 
-                // 2. Si es una operación puramente numérica escalar (sin vectores), usar cálculo normal
-                if (!expr.includes('R(') && !expr.includes('P(')) {
-                    let resultadoNormal = eval(expr);
-                    if (resultadoNormal === undefined || isNaN(resultadoNormal)) {
-                        pantalla.value = 'Error';
-                    } else {
-                        pantalla.value = resultadoNormal;
-                        ultimaSolucion = resultadoNormal.toString();
-                        añadirAlHistorial(expresionOriginal, resultadoNormal);
-                    }
-                    mostrandoResultado = true;
-                    return;
-                }
-
-                // 3. PROCESADOR REGEX DE CADENA OPERATIVA FASORIAL:
-                // Transforma algebraicamente operadores infix (+,-,*,/) en llamadas de métodos de la clase Complejo
-                // de forma segura sin romper funciones internas como R(x,y) o P(r,t)
-                let procesada = transformarMatematicaCompleja(expr);
-                let resultadoComplejo = eval(procesada);
+                let resultadoComplejo = parsearYCalcularComplejos(expr);
 
                 if (resultadoComplejo instanceof Complejo) {
                     const magnitud = Math.sqrt(resultadoComplejo.re*resultadoComplejo.re + resultadoComplejo.im*resultadoComplejo.im);
@@ -443,20 +503,13 @@
                     if (angulo < 0) angulo += 360;
 
                     let resFinal = resultadoComplejo.toString();
+                    if(Math.abs(resultadoComplejo.im) < 1e-12) resFinal = resultadoComplejo.re.toFixed(2);
+
                     pantalla.value = resFinal;
                     ultimaSolucion = resFinal;
-                    
+
                     añadirAlHistorial(expresionOriginal, resFinal);
                     actualizarInfoYGrafico(resultadoComplejo.re, resultadoComplejo.im, magnitud, angulo);
-                } else {
-                    // Si el eval devolvió un escalar plano, envolverlo
-                    let valorEscalar = parseFloat(resultadoComplejo);
-                    if(!isNaN(valorEscalar)) {
-                        pantalla.value = valorEscalar.toFixed(2);
-                        ultimaSolucion = valorEscalar.toString();
-                    } else {
-                        pantalla.value = 'Error';
-                    }
                 }
                 mostrandoResultado = true;
 
@@ -466,50 +519,163 @@
             }
         }
 
-        // Convierte expresiones de forma recursiva simulando un árbol jerárquico binario mediante Regex seguro
-        function transformarMatematicaCompleja(expr) {
-            let s = expr.replace(/\s+/g, '');
-
-            // Patrón para capturar bloques atómicos: Funciones R(...), P(...), variables o bloques entre paréntesis
-            // Cambiamos el algoritmo de sustitución destructivo anterior por un enrutador estructurado
-            const regexOperadores = /(\+|-|\*|\/)/g;
+        function parsearYCalcularComplejos(expr) {
+            let tokens = [];
+            let i = 0;
             
-            // Evaluamos la jerarquía aislando operaciones básicas paso a paso de forma nativa para objetos Complejos.
-            // Para simplificar de manera infalible y evitar romper las comas internas de R(x,y) y P(r,θ):
-            // Protegemos temporalmente los bloques vectoriales:
-            let vectoresEncontrados = [];
-            let protegida = s.replace(/(R|P)\([^)]+\)/g, function(match) {
-                vectoresEncontrados.push(match);
-                return `__VEC_ID_${vectoresEncontrados.length - 1}__`;
-            });
+            const funcionesCientificas = ['asin', 'acos', 'atan', 'pow10', 'sqrt', 'fact', 'inv', 'sin', 'cos', 'tan', 'exp', 'ln', 'lg', 'R', 'P'];
 
-            // Aplicamos sustituciones de operadores sobre la cadena protegida (donde ya no hay riesgo con las comas)
-            protegida = armarMetodos(protegida, '/', 'dividir');
-            protegida = armarMetodos(protegida, '*', 'multiplicar');
-            protegida = armarMetodos(protegida, '+', 'sumar');
-            protegida = armarMetodos(protegida, '-', 'restar');
-
-            // Restauramos los vectores originales en sus posiciones jerárquicas correspondientes
-            for (let i = 0; i < vectoresEncontrados.length; i++) {
-                protegida = protegida.replace(`__VEC_ID_${i}__`, vectoresEncontrados[i]);
+            while (i < expr.length) {
+                let c = expr[i];
+                if (c === '+' || c === '-' || c === '*' || c === '/' || c === '(' || c === ')' || c === ',') {
+                    if(c === '*' && expr[i+1] === '*') {
+                        tokens.push('**');
+                        i += 2;
+                    } else {
+                        tokens.push(c);
+                        i++;
+                    }
+                } else if (expr.startsWith('Math.PI', i)) {
+                    tokens.push(Math.PI.toString());
+                    i += 7;
+                } else if (expr.startsWith('Math.E', i)) {
+                    tokens.push(Math.E.toString());
+                    i += 6;
+                } else {
+                    let encontradaf = false;
+                    for(let f of funcionesCientificas) {
+                        if(expr.startsWith(f + '(', i)) {
+                            tokens.push(f);
+                            tokens.push('(');
+                            i += f.length + 1;
+                            encontradaf = true;
+                            break;
+                        }
+                    }
+                    
+                    if(!encontradaf) {
+                        // EXCLUSIÓN CRÍTICA DE LA COMA: No mezclar la coma ',' como parte del cuerpo del número decimal
+                        if ((c >= '0' && c <= '9') || c === '.') {
+                            let inicioNum = i;
+                            while (i < expr.length && ((expr[i] >= '0' && expr[i] <= '9') || expr[i] === '.')) i++;
+                            tokens.push(expr.slice(inicioNum, i));
+                        } else {
+                            i++; 
+                        }
+                    }
+                }
             }
 
-            return protegida;
+            let pos = 0;
+
+            function parsePrimario() {
+                let token = tokens[pos];
+                
+                if (token === '(') {
+                    pos++; 
+                    let res = parseSumaResta();
+                    pos++; 
+                    return res;
+                }
+
+                if (funcionesCientificas.includes(token)) {
+                    let func = token;
+                    pos++; // saltar función
+                    pos++; // saltar '('
+                    
+                    if (func === 'R' || func === 'P') {
+                        let arg1 = parseSumaResta(); 
+                        pos++; // saltar ','
+                        let arg2 = parseSumaResta(); 
+                        pos++; // saltar ')'
+                        return (func === 'R') ? R(arg1.re, arg2.re) : P(arg1.re, arg2.re);
+                    }
+
+                    let arg = parseSumaResta();
+                    pos++; // saltar ')'
+
+                    let v = arg.re; 
+
+                    switch(func) {
+                        case 'sin': 
+                            if(modoAngulo === "DEG") v = v * (Math.PI / 180);
+                            return new Complejo(Math.sin(v), 0);
+                        case 'cos': 
+                            if(modoAngulo === "DEG") v = v * (Math.PI / 180);
+                            return new Complejo(Math.cos(v), 0);
+                        case 'tan': 
+                            if(modoAngulo === "DEG") v = v * (Math.PI / 180);
+                            return new Complejo(Math.tan(v), 0);
+                        case 'asin': 
+                            let resAsin = Math.asin(v);
+                            if(modoAngulo === "DEG") resAsin = resAsin * (180 / Math.PI);
+                            return new Complejo(resAsin, 0);
+                        case 'acos': 
+                            let resAcos = Math.acos(v);
+                            if(modoAngulo === "DEG") resAcos = resAcos * (180 / Math.PI);
+                            return new Complejo(resAcos, 0);
+                        case 'atan': 
+                            let resAtan = Math.atan(v);
+                            if(modoAngulo === "DEG") resAtan = resAtan * (180 / Math.PI);
+                            return new Complejo(resAtan, 0);
+                        case 'ln': return new Complejo(Math.log(v), 0);
+                        case 'lg': return new Complejo(Math.log10(v), 0);
+                        case 'sqrt': return new Complejo(Math.sqrt(v), 0);
+                        case 'exp': return new Complejo(Math.exp(v), 0);
+                        case 'pow10': return new Complejo(Math.pow(10, v), 0);
+                        case 'inv': return new Complejo(1 / v, 0);
+                        case 'fact': return new Complejo(calcularFactorial(Math.floor(v)), 0);
+                        default: return new Complejo(0,0);
+                    }
+                }
+
+                pos++;
+                return new Complejo(parseFloat(token), 0);
+            }
+
+            function parsePotencia() {
+                let nodoIzq = parsePrimario();
+                while (pos < tokens.length && tokens[pos] === '**') {
+                    pos++;
+                    let nodoDer = parsePrimario();
+                    nodoIzq = new Complejo(Math.pow(nodoIzq.re, nodoDer.re), 0);
+                }
+                return nodoIzq;
+            }
+
+            function parseMultiplicacionDivision() {
+                let nodoIzq = parsePotencia();
+                while (pos < tokens.length && (tokens[pos] === '*' || tokens[pos] === '/')) {
+                    let op = tokens[pos];
+                    pos++;
+                    let nodoDer = parsePotencia();
+                    if (op === '*') nodoIzq = nodoIzq.multiplicar(nodoDer);
+                    if (op === '/') nodoIzq = nodoIzq.dividir(nodoDer);
+                }
+                return nodoIzq;
+            }
+
+            function parseSumaResta() {
+                let nodoIzq = parseMultiplicacionDivision();
+                while (pos < tokens.length && (tokens[pos] === '+' || tokens[pos] === '-')) {
+                    let op = tokens[pos];
+                    pos++;
+                    let nodoDer = parseMultiplicacionDivision();
+                    if (op === '+') nodoIzq = nodoIzq.sumar(nodoDer);
+                    if (op === '-') nodoIzq = nodoIzq.restar(nodoDer);
+                }
+                return nodoIzq;
+            }
+
+            return parseSumaResta();
         }
 
-        function armarMetodos(cadena, op, metodo) {
-            let partes = cadena.split(op);
-            if (partes.length === 1) return cadena;
-            let res = partes[0];
-            for (let i = 1; i < partes.length; i++) {
-                // Si el operando derecho es un número plano, lo convertimos en un objeto complejo implícito
-                let operandoDerecho = partes[i];
-                if(/^\d+(\.\d+)?$/.test(operandoDerecho)) {
-                    operandoDerecho = `new Complejo(${operandoDerecho},0)`;
-                }
-                res = `(${res}).${metodo}(${operandoDerecho})`;
-            }
-            return res;
+        function calcularFactorial(n) {
+            if (n < 0) return 0;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
         }
 
         function actualizarInfoYGrafico(x, y, mag, ang) {
@@ -526,9 +692,9 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const centroX = canvas.width / 2;
             const centroY = canvas.height / 2;
-            
+
             const maxCoordenada = Math.max(Math.abs(vectorX), Math.abs(vectorY), 5);
-            const escala = (canvas.width / 2 - 25) / maxCoordenada; 
+            const escala = (canvas.width / 2 - 25) / maxCoordenada;
 
             ctx.strokeStyle = '#25252b'; ctx.lineWidth = 1;
             for(let i = -Math.ceil(maxCoordenada); i <= Math.ceil(maxCoordenada); i++) {
@@ -542,15 +708,15 @@
 
             if (vectorX !== 0 || vectorY !== 0) {
                 const destinoX = centroX + vectorX * escala;
-                const destinoY = centroY - vectorY * escala; 
+                const destinoY = centroY - vectorY * escala;
 
-                ctx.strokeStyle = '#ff9f1c'; ctx.setLineDash();
+                ctx.strokeStyle = '#ff9f1c'; ctx.setLineDash([4, 4]);
                 ctx.beginPath(); ctx.moveTo(destinoX, destinoY); ctx.lineTo(destinoX, centroY);
                 ctx.moveTo(destinoX, destinoY); ctx.lineTo(centroX, destinoY); ctx.stroke();
-                ctx.setLineDash([]); 
+                ctx.setLineDash([]);
 
                 ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 4;
-                ctx.beginPath(); ctx.moveTo(centroX, centroY); ctx.lineTo(destinoX, destinoY); stroke(); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(centroX, centroY); ctx.lineTo(destinoX, destinoY); ctx.stroke();
 
                 const angulo = Math.atan2(destinoY - centroY, destinoX - centroX);
                 const tamanoFlecha = 12;
